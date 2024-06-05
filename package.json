@@ -1,12 +1,12 @@
 {
   "name": "Bosque marino",
   "version": "1.0.0",
-  "description": "![license](https://img.shields.io/badge/license-MIT-blue.svg)",
+  "description": "Gestión administrativa",
   "main": "index.js",
   "private": false,
   "scripts": {
-    "start": "set PORT=4000 && react-app-rewired start",
-    "dev": "set PORT=4000 && react-app-rewired start",
+    "start": "set PORT=4000 && react-app-rewired start ",
+    "dev": "set PORT=4000 && react-app-rewired start ",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject"
