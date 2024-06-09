@@ -79,17 +79,13 @@ function Permissions() {
 
     function changePermission (id, permission, isChecked) {
         
-        // console.log(id,permission, isChecked);
-        
+        // console.log(id,permission, isChecked);        
         let thisGroup = data.find(item => item.id === id);
         let index     = data.indexOf(thisGroup);
         thisGroup.permissions[permission].active = isChecked;
-
         let newTable    =  [...data];
         newTable[index] = thisGroup;
-
-        console.log(thisGroup);
-
+        // console.log(thisGroup);
         setdata(data);
         setcount(count + 1);
     }
@@ -122,7 +118,7 @@ function Permissions() {
                 axios.get(urlGetPermissions)
                 .then((res) => {
 
-                    console.log(res.data);
+                   // console.log(res.data);
                     let permissionsList = res.data.data;
 
                     for (let j = 0; j < permissionsList.length; j++) {
@@ -140,7 +136,7 @@ function Permissions() {
                     dataItems.push(newModule);
 
                     if(dataItems.length === subModules.length){
-                        console.log(dataItems);
+                        // console.log(dataItems);
                         setdata(dataItems);
                         setsearchTasks(false);
                     }
@@ -229,7 +225,7 @@ function Permissions() {
                 </Typography>
             }
         },
-        { 
+         { 
             field: 'permissions.crea',    
             headerName: 'Crea',
             sortable: false,
@@ -237,55 +233,57 @@ function Permissions() {
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.crea.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "crea", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "Crea", !ischecked)} checked={ischecked} />
             }
         },
-        { 
+         { 
             field: 'permissions.edita',    
             headerName: 'Edita',
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.edita.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "edita", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "Edita", !ischecked)} checked={ischecked} />
             }
             // width: 300
         },
-        { 
-            field: 'permissions.consulta',    
-            headerName: 'Consulta',
+         { 
+            field: 'permissions.ver',    
+            headerName: 'Ver',
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
-                let ischecked = data.row.permissions.consulta.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "consulta", !ischecked)} checked={ischecked} />
+                let ischecked = data.row.permissions.ver.active;
+                return <Checkbox onChange={() => changePermission(data.row.id, "Ver", !ischecked)} checked={ischecked} />
             }
             // width: 300
-        },
-        { 
+        }, 
+        /* { 
             field: 'permissions.imprime',    
             headerName: 'Imprime',
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.imprime.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "imprime", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "Imprime", !ischecked)} checked={ischecked} />
             }
             // width: 300
         },
-        { 
+         { 
             field: 'permissions.referencia',    
             headerName: 'Referencia',
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.referencia.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "referencia", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "Referencia", !ischecked)} checked={ischecked} />
             }
             // width: 300
-        }
+        } */
     ];
-
+    console.log("////////////////////////////////////////////")
+    console.log(columns)
+    console.log("////////////////////////////////////////////")
     const handleCloseModalSaveChanges = () => {
         setopenSaveChanges(false);
     }
@@ -351,10 +349,9 @@ function Permissions() {
             }
 
         });
-    }
-
+    }   
     return (
-        <Page title="Permisos | RepuestosGo">
+        <Page title="Permisos | Bosque Marino">
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">
@@ -473,7 +470,7 @@ function Permissions() {
                                     </Grid>
 
                                     <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>
-                                        
+                                    
                                         <DataGrid
                                             sx={{mb:4}}
                                             rows={data}
