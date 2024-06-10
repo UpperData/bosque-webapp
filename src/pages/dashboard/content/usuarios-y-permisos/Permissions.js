@@ -78,14 +78,13 @@ function Permissions() {
     const urlGetTasks       = "/aDmIn/MoDuLe/submodUle/";
 
     function changePermission (id, permission, isChecked) {
-        
+        console.log(data);
         // console.log(id,permission, isChecked);        
         let thisGroup = data.find(item => item.id === id);
         let index     = data.indexOf(thisGroup);
         thisGroup.permissions[permission].active = isChecked;
         let newTable    =  [...data];
         newTable[index] = thisGroup;
-        // console.log(thisGroup);
         setdata(data);
         setcount(count + 1);
     }
@@ -93,8 +92,7 @@ function Permissions() {
     const changeModule = async (idModule) => {
         setmodule(idModule);
         settasks(null);
-        setsearchTasks(true);
-       
+        setsearchTasks(true);       
         axios.get(urlGetTasks+idModule)
         .then(async (res) => {
 
@@ -107,7 +105,6 @@ function Permissions() {
 
             for (let i = 0; i < subModules.length; i++) {
                 const subModule = subModules[i];
-
                 let newModule           = {};
                 newModule.id            = subModule.subModuleId;
                 newModule.name          = subModule.name;
@@ -233,7 +230,7 @@ function Permissions() {
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.crea.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "Crea", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "crea", !ischecked)} checked={ischecked} />
             }
         },
          { 
@@ -243,7 +240,7 @@ function Permissions() {
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.edita.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "Edita", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "edita", !ischecked)} checked={ischecked} />
             }
             // width: 300
         },
@@ -254,7 +251,7 @@ function Permissions() {
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.ver.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "Ver", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "ver", !ischecked)} checked={ischecked} />
             }
             // width: 300
         }, 
