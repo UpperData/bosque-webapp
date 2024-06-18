@@ -262,11 +262,11 @@ function Permissions() {
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let ischecked = data.row.permissions.imprime.active;
-                return <Checkbox onChange={() => changePermission(data.row.id, "Imprime", !ischecked)} checked={ischecked} />
+                return <Checkbox onChange={() => changePermission(data.row.id, "imprime", !ischecked)} checked={ischecked} />
             }
             // width: 300
         },
-         { 
+        { 
             field: 'permissions.referencia',    
             headerName: 'Referencia',
             sortable: false,
