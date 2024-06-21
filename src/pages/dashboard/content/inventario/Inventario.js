@@ -25,6 +25,7 @@ import ExportExcel from "react-export-excel"
 import AddArticleModal from "./modal/AddArticleModal";
 import AddInventoryModal from "./modal/AddInventoryModal";
 import ChangePublishedStatusModal from "./modal/ChangePublishedStatusModal";
+import LotesArticleModal from "./modal/LotesArticleModal"
 
 const ExcelFile     = ExportExcel.ExcelFile;
 const ExcelSheet    = ExportExcel.ExcelSheet;
@@ -278,6 +279,28 @@ function Inventario() {
             }
         },
         { 
+            field: 'lote',    
+            headerName: 'Lotes',
+            sortable: false,
+            maxWidth: 120,
+            minWidth: 120,
+            flex: 1,
+            headerAlign: 'center',
+            editable: false,
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                /// let text = data.row.asignados;
+                return <Button
+                variant="contained" 
+                color="primary" 
+                // onClick={() => editPublishedItem(cellValues.row)}
+            >
+               Lotes
+            </Button>
+            }
+            
+        },
+        { 
             field: 'id',    
             headerName: 'Acción',
             sortable: false,
@@ -416,7 +439,7 @@ function Inventario() {
             }
 
             {openModalAddItem &&
-                <AddInventoryModal 
+                <LotesArticleModal 
                     show={openModalAddItem}
                     handleShowModal={(show) => {
                         setopenModalAddItem(false);
@@ -440,7 +463,7 @@ function Inventario() {
                                         fullWidth sx={{px : 3}} 
                                         size="normal"
                                     >
-                                        Añadir inventario
+                                        Añadir Lote
                                     </Button>
                                 </Grid>
                                 {/* 

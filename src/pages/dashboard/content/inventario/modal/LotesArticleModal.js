@@ -65,7 +65,7 @@ const MenuProps = {
     },
 };
 
-function AddInventoryModal({ 
+function LotesArticleModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
     reset = () => {}, 
@@ -260,7 +260,7 @@ function AddInventoryModal({
             >
                 <RootStyle>
                     <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                        {!edit ? 'Agregar inventario' : 'Editar inventario'}
+                        {!edit ? 'Agregar Lote' : 'Editar lote'}
                     </Typography>
 
                     {/* articulo select */}
@@ -347,7 +347,7 @@ function AddInventoryModal({
                                     {/* existencia */}
                                     <FormControl fullWidth size="small" sx={{mb: 2}}>
                                         <TextField
-                                            label="Existencia"
+                                            label="Cantidad"
                                             type="number"
                                             size="small"
                                             fullWidth
@@ -359,8 +359,8 @@ function AddInventoryModal({
                                             error={Boolean(touched.existence && errors.existence)} 
                                             onChange={(e) => formik.setFieldValue('existence', e.target.value)}
                                             
-                                            placeholder="Stock min"
-                                        />
+                                            placeholder="Cantidad"
+                                        /> 
                                     </FormControl>    
                                 </Grid>
                                 <Grid item md={4}>
@@ -379,7 +379,7 @@ function AddInventoryModal({
                                             error={Boolean(touched.minSctock && errors.minSctock)} 
                                             onChange={(e) => formik.setFieldValue('minSctock', e.target.value)}
                                             
-                                            placeholder="Stock min"
+                                            placeholder="Stock min."
                                         />
                                     </FormControl>    
                                 </Grid>
@@ -399,29 +399,10 @@ function AddInventoryModal({
                                             error={Boolean(touched.price && errors.price)} 
                                             onChange={(e) => formik.setFieldValue('price', e.target.value)}
                                             
-                                            placeholder="Stock min"
+                                            placeholder="Precio"
                                         />
                                     </FormControl>    
-                                </Grid>
-                                <Grid item md={4}>
-                                    {/* SKU */}
-                                    <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                        <TextField
-                                            label="SKU"
-                                            size="small"
-                                            fullWidth
-
-                                            value={values.sku}
-                                            defaultValue={values.sku}
-
-                                            helperText={touched.sku && errors.sku} 
-                                            error={Boolean(touched.sku && errors.sku)} 
-                                            onChange={(e) => formik.setFieldValue('sku', e.target.value)}
-                                            
-                                            placeholder="SKU"
-                                        />
-                                    </FormControl>    
-                                </Grid>
+                                </Grid>                               
                             </Grid>
 
                             <FormControl fullWidth size="small" sx={{mb: 2}}>
@@ -601,4 +582,4 @@ function AddInventoryModal({
     )
 }
 
-export default AddInventoryModal;
+export default LotesArticleModal;

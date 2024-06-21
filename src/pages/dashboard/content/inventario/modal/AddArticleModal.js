@@ -101,12 +101,14 @@ function AddArticleModal({
             try {
 
                 let data = {
-                    name:               values.name,
-                    description:        values.description
+                    name:         values.name,
+                    description:  values.description,
+                    minStock:     values.minStock,
+                    image:        values.MainPhoto,
                 }
 
                 if(typeForm === "create"){
-                    data.existence = values.existence;
+                    data.existence = 1;
                 }else{
                     data.id        = itemToEdit.id;
                 }
@@ -196,7 +198,7 @@ function AddArticleModal({
                     <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
 
                     <Typography id="modal-modal-title" variant="h3" component="h3">
-                        {typeForm === "create" ? "Agregar un producto" : "Editar un producto"}
+                        {typeForm === "create" ? "Agregar un artículo" : "Editar un artículo"}
                     </Typography>
 
                     <Grid container sx={{ mt: 3 }} columnSpacing={3}>
@@ -207,7 +209,7 @@ function AddArticleModal({
                                     fullWidth
                                     autoComplete="name"
                                     type="text"
-                                    label="Nombres"
+                                    label="Nombre"
 
                                     {...getFieldProps('name')}
                                     error={Boolean(touched.name && errors.name)}
@@ -221,21 +223,39 @@ function AddArticleModal({
                                     <TextField
                                         size='small'
                                         fullWidth
-                                        autoComplete="existence"
+                                        autoComplete="Stock min."
                                         type="text"
-                                        label="Existencia"
+                                        placeholder="Stock min."
 
                                         InputProps={{
                                             type: "number"
                                         }}
 
-                                        {...getFieldProps('existence')}
-                                        error={Boolean(touched.existence && errors.existence)}
-                                        helperText={touched.existence && errors.existence}
+                                        {...getFieldProps('minStock')}
+                                        error={Boolean(touched.minStock && errors.minStock)}
+                                        helperText={touched.minStock && errors.minStock}
                                     />         
                                 </Stack>
                             </Grid>
                         }
+                        <Grid sx={{mb: 2}} item xs={12}>
+                            <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                <TextField
+                                    label="Url imagen"
+                                    size="small"
+                                    fullWidth
+
+                                    // value={values.MainPhoto}
+                                    // defaultValue={values.MainPhoto}
+                                    {...getFieldProps('MainPhoto')}
+                                    helperText={touched.MainPhoto && errors.MainPhoto} 
+                                    error={Boolean(touched.MainPhoto && errors.MainPhoto)} 
+                                    // onChange={(e) => formik.setFieldValue('MainPhoto', e.target.value)}
+                                    
+                                    placeholder="Url imagen"
+                                />
+                            </FormControl>
+                        </Grid>
                         <Grid sx={{mb: 2}} item xs={12}>
                             <Stack spacing={3}>
                                 <TextField
@@ -244,7 +264,6 @@ function AddArticleModal({
                                     autoComplete="description"
                                     type="text"
                                     label="Descripción"
-
                                     multiline
                                     rows={2}
                                     maxRows={4}

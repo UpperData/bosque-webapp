@@ -255,7 +255,7 @@ function Permissions() {
             }
             // width: 300
         }, 
-        /* { 
+         { 
             field: 'permissions.imprime',    
             headerName: 'Imprime',
             sortable: false,
@@ -266,7 +266,7 @@ function Permissions() {
             }
             // width: 300
         },
-        { 
+       /* { 
             field: 'permissions.referencia',    
             headerName: 'Referencia',
             sortable: false,
