@@ -19,7 +19,9 @@ import {
     Select, 
     MenuItem, 
     InputLabel, 
-    FormControl 
+    FormControl,
+    Switch,
+    FormControlLabel
 } from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
@@ -74,27 +76,40 @@ function AddArticleModal({
 
     const urlNewItem                                    = "/INVETOry/aricle/new";
     const urlEditItem                                   = "/InVETOrY/aricLe/EdIT";
-
+    const [isActived,setIsActived]                      =useState(false);
+    const [isSUW,setIsSUW]                                =useState(false);
     const [typeForm, settypeForm]                       = useState("create");
     const [itemToEdit, setitemToEdit]                   = useState(null);
 
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
     const [alertErrorMessage,   setalertErrorMessage]   = useState("");
 
+    const handleChangeStatus = () => {    
+        setIsActived((prev) => !prev);
+      }; 
+    const handleChangeSUW  =() => {
+        setIsSUW((prev) => !prev);
+      };  
     const [sending, setsending]                         = useState(false);
 
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
-        description:        Yup.string().required('Debe ingresar una descripción'),
-        // existence:          Yup.string().required('Ingrese stock'),
+        description:        Yup.string().required('Debe ingresar una descripción'),        
+        MainPhoto:          Yup.string().required('Debe ingresar URL'), 
+        price:              Yup.number().required('Debe ingresar precio'), 
+        minStock:           Yup.number().required('Debe ingresar stock'),
     });
 
     const formik = useFormik({
         validateOnChange: false,
         initialValues: {
             name:             "",
-            description:      "",
-            existence:        "",
+            description:      "",            
+            price:            "",
+            imge:             "",
+            minStock:         "",
+            isActived:        "",
+            isSUW:            ""
         },
         validationSchema: LoginSchema,
         onSubmit: async (values, {resetForm}) => {
@@ -105,6 +120,9 @@ function AddArticleModal({
                     description:  values.description,
                     minStock:     values.minStock,
                     image:        values.MainPhoto,
+                    price:        values.price,
+                    isActived,
+                    isSUW
                 }
 
                 if(typeForm === "create"){
@@ -124,56 +142,27 @@ function AddArticleModal({
 
                     console.log(res);
                     setsending(false);
-
+                    
                     if(res.data.result){
-                        // setalertSuccessMessage(res.data.message);
-                        // setalertSuccessMessage("");
                         if(reset){
                             toast.success(res.data.message);
                             resetForm();
                             reset();
                         }
-
-                        // setopenModalAddItem(false);
-                        // getList();
-
-                        /*
-                            setTimeout(() => {
-                                setalertSuccessMessage("");
-                            }, 20000);
-                        */
+                    }else{
+                        toast.success(res.data.message);
                     }
 
                 }).catch((err) => {
-                    let fetchError = err;
-
-                    console.error(fetchError);
-                    if(fetchError.response){
-                        console.log(err.response);
-                        setalertErrorMessage(err.response.data.data.message);
-                        setTimeout(() => {
-                            setalertErrorMessage("");
-                        }, 20000);
+                    let fetchError = err;                       
+                    if(!fetchError.response.data.data.result){                                                
+                        toast.warning(err.response.data.data.message);                        
                         setsending(false);
                     }
                 });
 
             } catch(e) {
-                // setformErrors(e);
-
-                /*
-                    const config = {
-                        onUploadProgress: progressEvent => {
-                        let progressData = progress;
-                        progressData = (progressEvent.loaded / progressEvent.total) * 100;
-
-                        console.log(progressData);
-
-                        setprogress(progressData);
-                        setcount(count + progressData);
-                        }
-                    }
-                */
+                setalertErrorMessage(e.response.data.data.message);
             }
         }
     });
@@ -202,49 +191,98 @@ function AddArticleModal({
                     </Typography>
 
                     <Grid container sx={{ mt: 3 }} columnSpacing={3}>
-                        <Grid sx={{mb: 2}} item md={typeForm === "create" ? 8 : 12} xs={12}>
-                            <Stack spacing={3}>
+                        <Grid sx={{mb: 2}} item md={typeForm === "create" ? 4 : 4} xs={4}>
+                            <Stack spacing={1}>
                                 <TextField
                                     size='small'
                                     fullWidth
                                     autoComplete="name"
                                     type="text"
                                     label="Nombre"
-
+                                    required
                                     {...getFieldProps('name')}
                                     error={Boolean(touched.name && errors.name)}
                                     helperText={touched.name && errors.name}
                                 />         
                             </Stack>
                         </Grid>
-                        {typeForm === "create" &&
-                            <Grid sx={{mb: 2}} item md={4} xs={12}>
-                                <Stack spacing={3}>
-                                    <TextField
-                                        size='small'
-                                        fullWidth
-                                        autoComplete="Stock min."
-                                        type="text"
-                                        placeholder="Stock min."
+                        <Grid sx={{mb: 2}} item md={typeForm === "create" ? 4 : 4} xs={4}>
+                            <Stack spacing={1}>
+                                <TextField
+                                    size='small'
+                                    fullWidth
+                                    autoComplete="price"
+                                    type="number"
+                                    label="Precio"
+                                    required
+                                    {...getFieldProps('price')}
+                                    error={Boolean(touched.price && errors.price)}
+                                    helperText={touched.price && errors.price}
+                                />         
+                            </Stack>
+                        </Grid>
+                    
+                        <Grid sx={{mb: 2}} item md={4} xs={4}>
+                            <Stack spacing={1}>
+                                <TextField
+                                    size='small'
+                                    fullWidth
+                                    autoComplete="Stock min."
+                                    type="number"
+                                    label="Stock min."
+                                    required
+                                    InputProps={{
+                                        type: "number"
+                                    }}
 
-                                        InputProps={{
-                                            type: "number"
-                                        }}
-
-                                        {...getFieldProps('minStock')}
-                                        error={Boolean(touched.minStock && errors.minStock)}
-                                        helperText={touched.minStock && errors.minStock}
-                                    />         
-                                </Stack>
-                            </Grid>
-                        }
+                                    {...getFieldProps('minStock')}
+                                    error={Boolean(touched.minStock && errors.minStock)}
+                                    helperText={touched.minStock && errors.minStock}
+                                />         
+                            </Stack>
+                        </Grid>
+                        <Grid item md={3}>
+                            {/* estatus del lote */}
+                            
+                            <FormControlLabel
+                                width="200"
+                                control={
+                                <Switch
+                                    onChange={handleChangeStatus}
+                                    name="isActived"
+                                    color="primary" 
+                                    required
+                                    checked={isActived}                                           
+                                />
+                                }                                            
+                                label={isActived ? "Activo" : "Inactivo"}
+                            />  
+                        </Grid>
+                        <Grid item md={1}>
+                            {/* Tipo de venta del producto */}
+                            
+                            <FormControlLabel
+                                width="200"
+                                control={
+                                <Switch
+                                    onChange={handleChangeSUW}
+                                    name="isSUW"
+                                    color="primary" 
+                                    checked={isSUW}
+                                    required                                               
+                                />
+                                }                                            
+                                 label={isSUW ? "VUP" : "VP"}
+                                // label={`Switch is ${isSUW? 'ON':'OFF'}`}
+                            />  
+                        </Grid>
                         <Grid sx={{mb: 2}} item xs={12}>
                             <FormControl fullWidth size="small" sx={{mb: 2}}>
                                 <TextField
-                                    label="Url imagen"
+                                    label="URL imagen"
                                     size="small"
                                     fullWidth
-
+                                    required
                                     // value={values.MainPhoto}
                                     // defaultValue={values.MainPhoto}
                                     {...getFieldProps('MainPhoto')}
@@ -252,7 +290,7 @@ function AddArticleModal({
                                     error={Boolean(touched.MainPhoto && errors.MainPhoto)} 
                                     // onChange={(e) => formik.setFieldValue('MainPhoto', e.target.value)}
                                     
-                                    placeholder="Url imagen"
+                                    placeholder="URL imagen"
                                 />
                             </FormControl>
                         </Grid>
@@ -264,6 +302,7 @@ function AddArticleModal({
                                     autoComplete="description"
                                     type="text"
                                     label="Descripción"
+                                    required
                                     multiline
                                     rows={2}
                                     maxRows={4}

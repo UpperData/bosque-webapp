@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import AddArticleModal from "./AddArticleModal";
+import AddLotModal from "./AddLotModal";
 import { 
     Box, 
     Grid, 
@@ -20,9 +20,11 @@ import {
     MenuItem, 
     InputLabel, 
     FormControl,
-    FormHelperText
+    FormHelperText,
+    Switch,
+    FormControlLabel 
 } from '@mui/material';
-
+import { DataGrid, DataGridProps } from '@mui/x-data-grid';
 import { LoadingButton } from '@mui/lab';
 import { alpha, styled } from '@mui/material/styles';
 
@@ -32,12 +34,6 @@ import moment from "moment";
 
 import axios from "../../../../../auth/fetch"
 import Loader from '../../../../../components/Loader/Loader';
-import CategorySelect from '../../../../../components/selects/Category';
-import ClaseSelect from '../../../../../components/selects/Clase';
-import AnioSelect from '../../../../../components/selects/Anio';
-import MarcaSelect from '../../../../../components/selects/Marca';
-import ModelSelect from '../../../../../components/selects/Models';
-import SubCategorySelect from '../../../../../components/selects/SubCategory';
 import UploaderProductImg from '../../rrhh/Components/UploaderProductImages';
 import { toast } from 'react-toastify';
 
@@ -64,7 +60,19 @@ const MenuProps = {
       },
     },
 };
+function formatDate(date) {
+     let d = new Date(date);
+     let month = '' + (d.getMonth() + 1);
+     let day = '' + d.getDate();
+     let year = d.getFullYear();
 
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    return [year, month, day].join('-');
+}
 function LotesArticleModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
@@ -72,177 +80,281 @@ function LotesArticleModal({
     edit = null ,
     permissions= null
 }) {
-
+    let items=[]  ;    
+    function getList(){
+        // setId(id + 1);
+        items.push({"id": id , "lote":47,"weight":values.weight,"condition":values.condition,"note":values.note});
+        // setList(items); 
+        console.log(list);               
+    }
+    
+    const [list, setList] = useState([]);
+    const [id, setId] = useState(null);
+    const [exp,setExp] =useState(null)
     const [loading, setloading] = useState(true);
     const [sending, setsending] = useState(false);
     const [usersList, setusersList] = useState([]);
-
+    const [weight,setWeight]=useState(0);
+    const [condition,setCondition]=useState(1);
+    const [note,setnote]=useState(null);
     const [articlesList, setarticlesList] = useState([]);
+    const [articlesLots, setArticlesLots] = useState([]);
+    const [currentLot,setCurrentLot] = useState([]);
+    const [lotId,setLotId] =useState(0);
+    const [currenItem,setCurrenItem] =useState(0);
+    
 
-    const [showAddArticleModal, setshowAddArticleModal] = useState(false);
-
+    const [showAddLotModal, setshowAddLotModal] = useState(false);
+  
     const getItems = () => {
         const url = '/InVETorY/aRIcLe/list/*';
 
         axios.get(url).then((res) => {
-            console.log(res.data);
+             
             if(res.data.result){
                 setarticlesList(res.data.data);
+            }            
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
+    const getLots = () => {
+        
+        const url = '/inVenTory/LotS/'+edit.id+'/*';
+        axios.get(url).then((res) => {           
+            if(res.data.result){
+                setArticlesLots(res.data.data);        
+            }else{
+                setArticlesLots([]);                
             }
         }).catch((err) => {
             console.error(err);
         });
     }
-
-    useEffect(() => {
-        if(loading){
-            getItems();
+    const getCurrentLot = () => {        
+        if(lotId>0){
+            setCurrentLot(articlesLots.find(x => x.id===lotId)) 
+            
+        }else{
+            setCurrentLot([{}]);
         }
-    }, []);
+    }
+    useEffect(() => { 
+        if(lotId>0) getCurrentLot();
+    },[lotId]);
 
-    const openAddArticleModal = () => {
-        setshowAddArticleModal(true);
+    useEffect(() => {               
+        if(loading){
+             getItems();
+            if(edit && articlesLots)getLots();            
+        }
+    },[]);
+  
+    const openAddLotModal = () => {
+        setshowAddLotModal(true);        
     }
 
-    const resetModalAddItem = () => {
-        setshowAddArticleModal(false);
+    const resetModalAddItem = () => { // recarga modal padre
+        setshowAddLotModal(false);
         getItems();
+        // getLots();
+        // setLotId(0);
     }
 
     const FormSchema =      Yup.object().shape({
         articleId:              Yup.string().trim().required('Campo requerido'),
-
         existence:              Yup.string().trim().required('Campo requerido'),
-        minSctock:              Yup.string().trim().required('Campo requerido'),
-
-        price:                  Yup.number().required('Campo requerido'),
-        sku:                    Yup.string().trim().required('Campo requerido'),
-        autoTypeId:             Yup.string().trim().required('Campo requerido'),
-
-        categoryId:             Yup.string().trim().required('Campo requerido'),
-        
-
-        yearId:                 Yup.string().trim().required('Campo requerido'),
-        brandId:                Yup.string().trim().required('Campo requerido'),
-        modelId:                Yup.string().trim().required('Campo requerido'),
-
-        description:            Yup.string().trim().required('Campo requerido'),
-        MainPhoto:              Yup.string().trim().required('Campo requerido').url('Ingrese una URL válida'),
+        description:            Yup.string().trim().required('Campo requerido')
     });
+// encabezado del lote
 
     const formik = useFormik({
         enableReinitialize: true,
         validateOnChange: false,
-        initialValues: !edit ? {
-            articleId:          "",
-            existence:          "",
-            minSctock:          "",
-
-            price:              "",
-            sku:                "",
-
-            autoTypeId:         "",
-            
-            // category
-            categoryId:         "",
-            subCategory:        "",
-
-            yearId:             "",
-            brandId:            "",
-            modelId:            "",
-
-            description:        "",
-
-            MainPhoto:          "",
-            secondPhoto:        "",
-            thirdPhoto:         "",
-
-            // photo:           []
-        } : {
-            articleId:          edit.articleId,
-            existence:          edit.existence,
-            minSctock:          edit.minStock ? edit.minStock : "",
-
-            price:              edit.price,
-            sku:                edit.sku ? edit.sku : "",
-
-            autoTypeId:         edit.autoTypeId ? edit.autoTypeId : "",
-            
-            // category
-            categoryId:         edit.category ? edit.category.categoryId  : "",
-            subCategory:        edit.category ? edit.category.subCategory : "",
-
-            yearId:             edit.filter ? edit.filter.yearId  : "",
-            brandId:            edit.filter ? edit.filter.brandId : "",
-            modelId:            edit.filter ? edit.filter.modelId : "",
-
-            description:        edit.description ? edit.description : "",
-
-            MainPhoto:          edit.photo ? edit.photo.MainPhoto   : "",
-            secondPhoto:        edit.photo ? edit.photo.secondPhoto : "",
-            thirdPhoto:         edit.photo ? edit.photo.thirdPhoto  : "",
-        },
-        validationSchema: FormSchema,
-        onSubmit: async (values, {resetForm}) => {
+        initialValues: {
+            weight:      "",
+            conditionId: "",
+            note:        ""
+        } ,
+        // validationSchema: FormSchema,
+        onSubmit: async (values) => {
             let data = {
-                articleId:       values.articleId,
-                existence:       values.existence,
-                minSctock:       values.minSctock,
-
-                price:           values.price,
-                sku:             values.sku,
-                autoTypeId:      values.autoTypeId,
-                
-                // category
-                category:           {
-                    categoryId:  values.categoryId,
-                    subCategory: values.subCategory,
-                },
-
-                filter:             {
-                    yearId:    values.yearId,
-                    brandId:   values.brandId,
-                    modelId:   values.modelId,
-                },
-
-                description:        values.description,
-                tags:               "car",
-                photo:              {
-                    MainPhoto: values.MainPhoto && values.MainPhoto !== "" ? values.MainPhoto : null,
-                    secondPhoto: values.secondPhoto && values.secondPhoto !== "" ? values.secondPhoto : null,
-                    thirdPhoto: values.thirdPhoto && values.thirdPhoto !== "" ? values.thirdPhoto : null
-                }
+                lotId,
+                items:[{        
+                    "weight":values.weight,
+                    "conditionId":values.conditionId,
+                    "note":values.note
+                }]
             }
-
-            setsending(true);
-
-            console.log('data', data);
-            axios.put('/InvEToRY/UpdaTE/ARTICLE', data).then((res) => {
-
-                console.log(res.data);
+            setsending(true);            
+            axios({
+                method: currenItem === 0 ? "POST" : "PUT",
+                url:    '/inVenTory/LotS/ITEMS',
+                data
+            }).then((res) => {
                 toast.success(res.data.message);
                 setsending(false);
-                reset();
+                
                 
             }).catch((err) => {
                 console.error(err);
             });
         }
     });
-
-    const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
-    console.log(values);
-    console.log(edit);
-
+    const formikItem = useFormik({
+        enableReinitialize: true,
+        validateOnChange: false,
+        initialValues: {
+            weight:      "",
+            conditionId: "",
+            note:        ""
+        } ,
+        // validationSchema: FormSchema,
+        onSubmit: async (values) => {
+            let data = {
+                lotId,
+                items:[{        
+                    "weight":values.weight,
+                    "conditionId":values.conditionId,
+                    "note":values.note
+                }]
+            }
+            setsending(true);            
+            axios({
+                method: currenItem === 0 ? "POST" : "PUT",
+                url:    '/inVenTory/LotS/ITEMS',
+                data
+            }).then((res) => {
+                toast.success(res.data.message);
+                setsending(false);
+                
+                
+            }).catch((err) => {
+                console.error(err);
+            });
+        }
+    });
+    const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;  
+    
+    const [state, setState] = React.useState({
+        checkedA: true,
+        checkedB: true,
+    });
+    const handleChange = (event) => {
+        setState({ ...state, [event.target.name]: event.target.checked });
+      };      
+    
+    const columns  = [    
+    {         
+        field: 'id',     
+        headerName: '# Item',
+        maxWidth: 80,
+        minWidth: 60,
+        flex: 1,
+        sortable: false,
+        renderCell: (cellValues) => {/*
+            let data = currentLot.itemLots;
+            console.log(data)
+           return  <Typography 
+                        sx={{
+                            fontWeight: 'bold', 
+                            mb:0, 
+                            justifyContent: "start"
+                        }} 
+                        fullWidth 
+                        variant="body"
+                        // onClick={() => editItem(data.row)}
+                    >
+                        { data.id}
+                    </Typography> */
+        }
+    },{ 
+        editable: true,
+        field: 'weight',     
+        headerName: 'Peso',
+        maxWidth: 100,
+        minWidth: 80,
+        flex: 1,
+        sortable: false,
+        renderCell: (cellValues) => {/*
+            let data = currentLot.itemLots;
+            
+            return  <Typography 
+                        sx={{
+                            fontWeight: 'bold', 
+                            mb:0, 
+                            justifyContent: "start"
+                        }} 
+                        fullWidth 
+                        variant="body"
+                        // onClick={() => editItem(data.row)}
+                    >
+                        {data.weight} 
+                    </Typography> */
+        }
+    },{ 
+        editable: false,
+        field: 'conditionName',     
+        headerName: 'Condición',
+        maxWidth: 200,
+        minWidth: 100,
+        flex: 1,
+        sortable: false,         
+        renderCell: (cellValues) => { /*
+            const innerNotes = JSON.parse(currentLot.itemLots?.condition);            
+            let data = currentLot.itemLots;            
+            return  <Typography 
+                        sx={{
+                            fontWeight: 'bold', 
+                            mb:0, 
+                            justifyContent: "start"
+                        }} 
+                        fullWidth 
+                        variant="body"
+                        // onClick={() => editItem(data.row)}
+                    >
+                        {innerNotes.name} 
+                    </Typography>  */
+        }
+    },{ 
+        editable: true,
+        field: 'note',     
+        headerName: 'Nota',
+        maxWidth: 150,
+        minWidth: 80,
+        flex: 1,
+        sortable: false,
+        renderCell: (cellValues) => { /*
+            let data = currentLot.itemLots;
+            
+            return  <Typography 
+                sx={{
+                    fontWeight: 'bold', 
+                    mb:0, 
+                    justifyContent: "start"
+                }} 
+                fullWidth 
+                variant="body"
+                // onClick={() => editItem(data.row)}
+                >
+                    {data.note} 
+                </Typography>   */
+        }
+    }
+    ]
+    
     return (
         <>
-            <AddArticleModal 
-                show={showAddArticleModal}
+            
+            <AddLotModal 
+                show={showAddLotModal}
                 handleShowModal={(show) => {
-                    setshowAddArticleModal(false);
+                    setshowAddLotModal(false);
                 }}
                 permissions={permissions}
                 reset={() => resetModalAddItem()}
+                article={edit}
+                lotId={0}
             />
 
             <Modal     
@@ -260,13 +372,13 @@ function LotesArticleModal({
             >
                 <RootStyle>
                     <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                        {!edit ? 'Agregar Lote' : 'Editar lote'}
+                        {!edit ? 'Agregar Lote' : 'Lotes de '+ edit.name}
                     </Typography>
-
+                    
                     {/* articulo select */}
-                    {!edit &&
+                    
                         <Grid container columnSpacing={3}>
-                            <Grid item md={7} xs={12}>
+                            {!edit && <Grid item md={5} xs={12}>
 
                                 <FormControl fullWidth size="small" sx={{mb: 2}} error={Boolean(touched.articleId && errors.articleId)} >
                                     <InputLabel id="article-label">
@@ -278,8 +390,7 @@ function LotesArticleModal({
                                         id="article"
 
                                         value={values.articleId}
-                                        onChange={(e) => formik.setFieldValue('articleId', e.target.value)}
-                                        
+                                        onChange={(e) => formik.setarticlesList(e.target.value)}                                        
                                         label="Artículo"
                                         MenuProps={MenuProps}
                                     >
@@ -299,37 +410,80 @@ function LotesArticleModal({
                                         </FormHelperText>
                                     }
                                 </FormControl>
+                           </Grid>}
+                            <Grid item md={6} xs={12}>
+
+                                <FormControl fullWidth size="small" sx={{mb: 2}} error={Boolean(touched.articleId && errors.articleId)} >
+                                    <InputLabel id="article-label">
+                                        Lotes
+                                    </InputLabel>
+                                    <Select
+                                        fullWidth
+                                        labelId="article-label"
+                                        id="lots"
+                                        onChange={(e) => setLotId(e.target.value)}                                        
+                                        label="Lotes"
+                                        MenuProps={MenuProps}
+                                    >
+                                        {articlesLots.map((item, key) => {
+                                            let dataItem = item;
+                                            return <MenuItem 
+                                                key={key} 
+                                                value={dataItem.id}
+                                            >
+                                                {
+                                                    
+                                                    dataItem.id +  " - " + new Intl.DateTimeFormat('es-VE').format(new Date(dataItem.receivedDate)) 
+                                                
+                                                }
+                                            </MenuItem>
+                                        })}
+                                    </Select>
+                                    {touched.articleId && errors.articleId &&
+                                        <FormHelperText>
+                                            {errors.articleId}
+                                        </FormHelperText>
+                                    }
+                                </FormControl>
                             </Grid>
-                            <Grid item md={5} xs={12}>
-                                <Button
-                                    sx={{mb: 2}}
-                                    variant="contained"
-                                    component="label"
-                                    fullWidth
-                                    onClick={() => openAddArticleModal()}
-                                >
-                                    Agregar artículo
-                                </Button>
+                            <Grid item md={4} xs={4}>
+                                <Tooltip title="Crear un nuevo lote" placement="top-start">
+                                    <Button
+                                        id="newLot"
+                                        sx={{mb: 2}}
+                                        variant="contained"
+                                        component="label"
+                                        fullWidth
+                                        
+                                        // onClick={() => openAddArticleModal()}
+                                        onClick={() => openAddLotModal(edit)}
+                                    >
+                                        Nuevo Lote
+                                    </Button>
+                                </Tooltip>
                             </Grid>
                         </Grid>
-                    }
+                    
 
                     {/* data inventario */}
                     <Grid container columnSpacing={3}>
-                        <Grid item md={7} xs={12}>
+                        <Grid item md={12} xs={12}>
 
-                            <Grid container columnSpacing={1}>
-                                <Grid item md={6}>
+                            <Grid container columnSpacing={2}>
+                                <Grid item md={2}>
                                     {/* codigo */}
                                     <FormControl fullWidth size="small" sx={{mb: 2}}>
                                         <TextField
-                                            label="Código"
+                                        InputLabelProps={{
+                                            shrink: true,
+                                          }}
+                                            label="Cód. Artículo"
                                             size="small"
                                             fullWidth
                                             InputProps={{
                                                 readOnly: true,
                                             }}
-                                            value={values.articleId}
+                                            value={currentLot.articleId}
                                             // defaultValue={values.description}
 
                                             // helperText={touched.description && errors.description} 
@@ -339,91 +493,140 @@ function LotesArticleModal({
                                             // placeholder="Nombre del grupo"
                                             // value={nameNewGroup}
                                             // onChange={(e) => setnameNewGroup(e.target.value)}
-                                            disabled
+                                            readOnly
                                         />
-                                    </FormControl>    
+                                    </FormControl>  
+                                </Grid>     
+                                <Grid item md={2}>
+                                    <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                        <TextField
+                                        InputLabelProps={{
+                                            shrink: true,
+                                          }}
+                                            label="# Lote"
+                                            size="small"
+                                            fullWidth
+                                            InputProps={{
+                                                readOnly: true,
+                                            }}
+                                            value={currentLot.id}
+                                            // defaultValue={values.description}
+
+                                            // helperText={touched.description && errors.description} 
+                                            // error={Boolean(touched.description && errors.description)} 
+                                            // onChange={(e) => formik.setFieldValue('description', e.target.value)}
+                                            
+                                            // placeholder="Nombre del grupo"
+                                            // value={nameNewGroup}
+                                            // onChange={(e) => setnameNewGroup(e.target.value)}
+                                            readOnly
+                                        />
+                                    </FormControl>   
                                 </Grid>
-                                <Grid item md={6}>
+                                <Grid item md={2}>
                                     {/* existencia */}
                                     <FormControl fullWidth size="small" sx={{mb: 2}}>
                                         <TextField
+                                        InputLabelProps={{
+                                            shrink: true,
+                                          }}
                                             label="Cantidad"
                                             type="number"
                                             size="small"
-                                            fullWidth
-
-                                            value={values.existence}
-                                            defaultValue={values.existence}
-
-                                            helperText={touched.existence && errors.existence} 
-                                            error={Boolean(touched.existence && errors.existence)} 
+                                            fullWidth                                            
+                                            value={ Object.keys(currentLot.itemLots || {} ).length  }
+                                            helperText={touched.qty && errors.qty} 
+                                            error={Boolean(touched.qty && errors.qty)} 
                                             onChange={(e) => formik.setFieldValue('existence', e.target.value)}
-                                            
+                                            readOnly
                                             placeholder="Cantidad"
                                         /> 
                                     </FormControl>    
                                 </Grid>
-                                <Grid item md={4}>
-                                    {/* Stock min */}
+                                <Grid item md={3}>
+                                    {/* existencia */}
                                     <FormControl fullWidth size="small" sx={{mb: 2}}>
                                         <TextField
-                                            label="Stock min"
-                                            type="number"
+                                            InputLabelProps={{
+                                                shrink: true,
+                                              }}
+                                            label="Recibido"
+                                            type="date"
                                             size="small"
                                             fullWidth
-
-                                            value={values.minSctock}
-                                            defaultValue={values.minSctock}
-
-                                            helperText={touched.minSctock && errors.minSctock} 
-                                            error={Boolean(touched.minSctock && errors.minSctock)} 
-                                            onChange={(e) => formik.setFieldValue('minSctock', e.target.value)}
-                                            
-                                            placeholder="Stock min."
-                                        />
+                                            value={formatDate( currentLot.receivedDate) }                     
+                                            // helperText={touched.existence && errors.existence} 
+                                            error={Boolean(touched.existence && errors.existence)} 
+                                            onChange={(e) => formik.setFieldValue('existence', e.target.value)}                                            
+                                            placeholder="Recibido"
+                                            readOnly
+                                        /> 
                                     </FormControl>    
                                 </Grid>
-                                <Grid item md={4}>
-                                    {/* Precio */}
+                                <Grid item md={3}>
+                                    {/* existencia */}
                                     <FormControl fullWidth size="small" sx={{mb: 2}}>
                                         <TextField
-                                            label="Precio"
+                                            InputLabelProps={{
+                                                shrink: true,
+                                              }}
+                                            label="Vencimiento"
+                                            type="date"
                                             size="small"
-                                            type='number'
                                             fullWidth
-
-                                            value={values.price}
-                                            defaultValue={values.price}
-
-                                            helperText={touched.price && errors.price} 
-                                            error={Boolean(touched.price && errors.price)} 
-                                            onChange={(e) => formik.setFieldValue('price', e.target.value)}
-                                            
-                                            placeholder="Precio"
-                                        />
+                                            value={formatDate(currentLot.expDate)}                     
+                                            defaultValue={values.exp}
+                                            // helperText={touched.existence && errors.existence} 
+                                            error={Boolean(touched.exp && errors.exp)} 
+                                            onChange={(e) => formik.setFieldValue('exp', e.target.value)}                                            
+                                            placeholder="Vencimiento"
+                                            readOnly
+                                        /> 
                                     </FormControl>    
+                                </Grid>                                
+                                <Grid item md={3}>
+                                    {/* estatus del lote */}
+                                    
+                                    <FormControlLabel
+                                        width="200"
+                                        control={
+                                        <Switch
+                                            checked={currentLot.isActived}
+                                            onChange={handleChange}
+                                            name="isActived"
+                                            color="primary"
+                                            readOnly
+                                        />
+                                        }
+                                        
+                                        label={currentLot.isActived ? "Activo" : "Inactivo"}
+                                    />  
+                                </Grid>
+                                <Grid item md={9}>
+                                    {/* Nota */}                                    
+                                    <FormControl fullWidth size="small" sx={{mb: 2}}>                                    
+                                    <TextField                                    
+                                    InputLabelProps={{
+                                        shrink: true,
+                                      }}
+                                        label="Nota relevante"
+                                        size="small"
+                                        fullWidth
+                                        minRows={1}
+                                        multiline
+                                        value={currentLot.note}
+                                        defaultValue={currentLot.note}
+                                        helperText={touched.description && errors.description} 
+                                        error={Boolean(touched.description && errors.description)} 
+                                        onChange={(e) => formik.setFieldValue('description', e.target.value)}                                        
+                                        placeholder="Nota relevante"
+                                        readOnly
+                                    />
+                                    </FormControl>
                                 </Grid>                               
                             </Grid>
 
-                            <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                {/* Descripción */}
-                                <TextField
-                                    label="Descripción"
-                                    size="small"
-                                    fullWidth
-                                    minRows={3}
-                                    multiline
-
-                                    value={values.description}
-                                    defaultValue={values.description}
-
-                                    helperText={touched.description && errors.description} 
-                                    error={Boolean(touched.description && errors.description)} 
-                                    onChange={(e) => formik.setFieldValue('description', e.target.value)}
-                                    
-                                    placeholder="Stock min"
-                                />
-                            </FormControl>
+                            
                             {/*
                             <Typography 
                                 id="modal-modal-title" 
@@ -492,90 +695,124 @@ function LotesArticleModal({
                             */}
                             
                         </Grid>
-                        <Grid item md={5} xs={12}>
-                            <Box sx={{width: '100%', textAlign: 'left'}}>
-                                <Typography 
-                                    color='text.secondary' 
-                                    id="modal-modal-title" 
-                                    variant="h6" 
-                                    component="h6"  
-                                    sx={{mb: 2}}
-                                >
-                                    Imagenes
-                                </Typography>
-                                <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                    <TextField
-                                        label="Url imagen principal"
-                                        size="small"
-                                        fullWidth
+                        
+                    </Grid>   
+                    <hr/>  
+                    <br/>
+                    <FormikProvider value={formik}>
+                        <Form autoComplete="off" noValidate onSubmit={handleSubmit } id="form1">
+                            <Grid container columnSpacing={3}>  
+                                <Grid item md={12} xs={12}>
+                                    <Grid container columnSpacing={2}>
+                                        <Grid item md={3}>
+                                            {/* peso */}
+                                            <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                                <Tooltip title="Peso de item" placement="top-end">
+                                                    <TextField
+                                                        label="Peso"
+                                                        size="small"
+                                                        fullWidth
+                                                        type="number"
+                                                        InputLabelProps={{
+                                                            shrink: true,
+                                                        }}
+                                                        // value={values.articleId}
+                                                        placeholder="Kg"
+                                                        helperText={touched.weight && errors.weight} 
+                                                        error={Boolean(touched.weight && errors.weight)} 
+                                                        onChange={(e) => formik.setFieldValue('weight', e.target.value)}
+                                                    />
+                                                </Tooltip>
+                                            </FormControl>    
+                                        </Grid>
+                                        <Grid item md={3}>
+                                            {/* codigo */}
+                                            <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                                <InputLabel id="demo-simple-select-label">Condición</InputLabel>
+                                                <Tooltip title="Condición del Item" placement="top-end">
+                                                    <Select
+                                                        labelId="demo-simple-select-label"
+                                                        id="demo-simple-select"
+                                                        defaultValue={1}
+                                                        label="Condición"
+                                                        onChange={(e) => formik.setFieldValue('conditionId', e.target.value)}
+                                                    >
+                                                        <MenuItem value={1}>Disponible </MenuItem>
+                                                        <MenuItem value={2}>Reservado</MenuItem>
+                                                        <MenuItem value={3}>Vendido</MenuItem>
+                                                        <MenuItem value={4}>Eliminado</MenuItem>
+                                                    </Select>
+                                                </Tooltip>
+                                            </FormControl>    
+                                        </Grid>
+                                        <Grid item md={3}>
+                                            {/* nota */}
+                                            <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                                <Tooltip title="Nota u observación" placement="top-end">  
+                                                    <TextField
+                                                        label="Nota"
+                                                        size="small"
+                                                        // defaultValue="N/A"
+                                                        fullWidth
+                                                        placeholder="N/A"
+                                                        InputLabelProps={{
+                                                            shrink: true,
+                                                        }}
+                                                        // value={values.articleId}
+                                                        onChange={(e) => formik.setFieldValue('note', e.target.value)}
+                                                    />
+                                                </Tooltip>
+                                            </FormControl>    
+                                        </Grid>
+                                    <Grid item md={2} xs={2}>
+                                        <Tooltip title="Agregar Item al lote" placement="top-end">
+                                            <LoadingButton                                                
+                                                fullWidth
+                                                size="large"
+                                                type="submit"
+                                                variant="contained"
+                                                
+                                                color="primary"
+                                                form="form1"                                              
+                                            >
+                                                +
+                                            </LoadingButton>
+                                        </Tooltip>
+                                    </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>     
+                        </Form>
+                    </FormikProvider>
+                    <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>                         
+                        <DataGrid autoHeight 
+                            sx={{mb:6}}
+                            rows={currentLot.itemLots}
+                            columns={columns}
+                            rowHeight={23}
+                            // onCellEditStop={(params) => handleCellEditStop(params)}
+                            // experimentalFeatures={{ newEditingApi: true }}
+                            // onCellEditStart={(params) => handleCellEditStart(params)}
+                            // processRowUpdate={processRowUpdate}
 
-                                        value={values.MainPhoto}
-                                        defaultValue={values.MainPhoto}
+                            // onCellEditCommit={(params) => handleCellEditStop(params)}
+                            // onCellFocusOut={(params)   => validateChanges(params)}
+                            
+                            // page={0}
+                            pageSize={6}
+                            rowsPerPageOptions={[6,10,20]}
+                            // autoPageSize
+                            rowCount={Object.keys(currentLot.itemLots || {} ).length}
 
-                                        helperText={touched.MainPhoto && errors.MainPhoto} 
-                                        error={Boolean(touched.MainPhoto && errors.MainPhoto)} 
-                                        onChange={(e) => formik.setFieldValue('MainPhoto', e.target.value)}
-                                        
-                                        placeholder="Url imagen principal"
-                                    />
-                                </FormControl> 
-                                <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                    <TextField
-                                        label="Url imagen 2"
-                                        size="small"
-                                        fullWidth
+                            // disableColumnFilter
+                            // disableColumnMenu                            
+                            disableColumnSelector
+                            disableSelectionOnClick
+                            editable
+                            // checkboxSelection
+                        />
 
-                                        value={values.secondPhoto}
-                                        defaultValue={values.secondPhoto}
-
-                                        helperText={touched.secondPhoto && errors.secondPhoto} 
-                                        error={Boolean(touched.secondPhoto && errors.secondPhoto)} 
-                                        onChange={(e) => formik.setFieldValue('secondPhoto', e.target.value)}
-                                        
-                                        placeholder="Url imagen 2"
-                                    />
-                                </FormControl>
-                                <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                    <TextField
-                                        label="Url imagen 3"
-                                        size="small"
-                                        fullWidth
-
-                                        value={values.thirdPhoto}
-                                        defaultValue={values.thirdPhoto}
-
-                                        helperText={touched.thirdPhoto && errors.thirdPhoto} 
-                                        error={Boolean(touched.thirdPhoto && errors.thirdPhoto)} 
-                                        onChange={(e) => formik.setFieldValue('thirdPhoto', e.target.value)}
-                                        
-                                        placeholder="Url imagen 3"
-                                    />
-                                </FormControl>
-                            </Box>
-                        </Grid>
-                    </Grid>           
-
-                    <Box flex justifyContent="center" sx={{mt: 2}}>
-                        <LoadingButton 
-                            variant="contained" 
-                            color="primary"
-                            type="submit"
-                            sx={{px: 2.5, py: 1.5}}
-                            onClick={() => handleSubmit()}
-                            loading={sending}
-                            disabled={sending}
-                        >
-                            {!edit ? 'Guardar' : 'Editar'}
-                        </LoadingButton>
-                        <Button 
-                            disabled={sending} 
-                            size="large" 
-                            sx={{px: 2.5 , mx: 1 }} 
-                            onClick={() => handleShowModal(false)}
-                        >
-                            Cancelar
-                        </Button>
-                    </Box>
+                    </div>                                     
                 </RootStyle>
             </Modal>
         </>

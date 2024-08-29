@@ -75,20 +75,14 @@ function ChangePublishedStatusModal({
 
     const changeStatus = () => {
         setsending(true);
-
         let data = {
-            articleId:   edit.article.aricleId, 
+            articleId:   edit.id, 
             isPublished: !edit.isPublished
-        }
-
-        console.log('data', data);
+        }        
         axios.put('invetory/publishING/set', data).then((res) => {
-
-            console.log(res.data);
-            toast.success(res.data.message);
+            toast.success(res.data.message); 
             setsending(false);
-            reset();
-            
+            reset();            
         }).catch((err) => {
             console.error(err);
         });
@@ -109,10 +103,10 @@ function ChangePublishedStatusModal({
         >
             <RootStyle>
                 <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                    {edit.isPublished ? 'Ocultar artículo' : 'Publicar artículo'}
+                    {!edit.isActived ? 'Ocultar artículo' : 'Publicar artículo'}
                 </Typography>
                 <Typography id="modal-modal-title" variant="p" component="p" sx={{mb: 3}}>
-                    ¿Desea {edit.isPublished ? 'Ocultar' : 'Publicar'} el artículo {edit.article.name}?
+                    ¿Desea {!edit.isActived ? 'Ocultar' : 'Publicar'} {edit.name}?
                 </Typography>
                 <Box flex justifyContent="center" sx={{mt: 2}}>
                     <LoadingButton 

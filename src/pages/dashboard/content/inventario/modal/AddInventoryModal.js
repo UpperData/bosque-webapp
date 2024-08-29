@@ -276,10 +276,8 @@ function AddInventoryModal({
                                         fullWidth
                                         labelId="article-label"
                                         id="article"
-
                                         value={values.articleId}
-                                        onChange={(e) => formik.setFieldValue('articleId', e.target.value)}
-                                        
+                                        onChange={(e) => formik.setFieldValue('articleId', e.target.value)}                                        
                                         label="Artículo"
                                         MenuProps={MenuProps}
                                     >

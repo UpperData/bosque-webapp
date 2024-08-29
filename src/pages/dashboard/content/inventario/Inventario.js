@@ -1,15 +1,17 @@
 import {useState, useEffect} from "react"
 import * as Yup from 'yup';
 import { useFormik, Form, FormikProvider } from 'formik';
+import { Link, useLocation } from 'react-router-dom';
+import Excel from 'exceljs';
+import { saveAs } from 'file-saver';
+import moment from "moment";
 
 // material
-import { Box, Grid, Stack, ButtonGroup, Tooltip, Container, Typography, Alert,  Card, CardContent, Hidden, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import { Box, Grid, Stack, ToggleButtonGroup,ButtonGroup, Tooltip, Container, Typography, Alert,  Card, CardContent, Hidden, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { DataGrid, DataGridProps } from '@mui/x-data-grid';
-import { Link, useLocation } from 'react-router-dom';
 
 // components
 import Page from '../../../../components/Page';
-
 import axios from "../../../../auth/fetch"
 import Loader from '../../../../components/Loader/Loader';
 
@@ -20,12 +22,15 @@ import CaretRight from "@iconify/icons-ant-design/caret-right"
 import CaretLeft from "@iconify/icons-ant-design/caret-left"
 import { getPermissions } from "../../../../utils/getPermissions";
 import { useSelector } from "react-redux";
-
+import { toast } from 'react-toastify';
 import ExportExcel from "react-export-excel"
 import AddArticleModal from "./modal/AddArticleModal";
 import AddInventoryModal from "./modal/AddInventoryModal";
 import ChangePublishedStatusModal from "./modal/ChangePublishedStatusModal";
-import LotesArticleModal from "./modal/LotesArticleModal"
+import LotesArticleModal from "./modal/LotesArticleModalFull";
+import { CSVLink} from 'react-csv';
+
+const ExcelJS = require("exceljs");
 
 const ExcelFile     = ExportExcel.ExcelFile;
 const ExcelSheet    = ExportExcel.ExcelSheet;
@@ -36,8 +41,7 @@ const ExcelColumn   = ExportExcel.ExcelColumn;
 function Inventario() {
 
     // const [data, setdata]                            = useState(rows);
-    const [count, setcount]                             = useState(0);
-
+    const [count, setcount]                             = useState(0);    
     const [loading, setloading]                         = useState(true);
     const [search, setsearch]                           = useState(true);
     const [data, setdata]                               = useState(null);
@@ -49,6 +53,7 @@ function Inventario() {
     const [openSaveChanges, setopenSaveChanges]         = useState(false);
     const [sending, setsending]                         = useState(false);
 
+    const [openModalArticle,setOpenModalArticle] =useState(false);
     const [openModalAddItem, setopenModalAddItem]           = useState(false);
     const [openModalPublishItem, setopenModalPublishItem]   = useState(false);
 
@@ -57,7 +62,9 @@ function Inventario() {
 
     // const [editingItemInTable, seteditingItemInTable]   = useState(null);
     const [changeInputStock, setchangeInputStock]       = useState(false);
-
+    const [stockdata, setStockdata]= useState([]); 
+    const [currentArticle, setCurrentArticle]           =useState([{id:0}])
+   
     const urlGetData        = "/InveTorY/get/ALL";
     const urlEditItemData   = "/InvEToRY/UpdaTE/ARTICLE";
 
@@ -71,10 +78,6 @@ function Inventario() {
         setsearch(true);
         axios.get(urlGetData)
         .then((res) => {
-
-            // console.log("---Data---");
-            // console.log(res);
-
             settypeForm("create");
             setitemToEdit(null);
 
@@ -106,16 +109,10 @@ function Inventario() {
     }, []);
 
     const editItem = (data) => {
-        console.log("Edit", data);
-
-        // setFieldValue("name",           data.article.name);
-        // setFieldValue("description",    data.article.description);
-
         settypeForm("edit");
         setitemToEdit(data);
         setopenModalAddItem(true);
     }
-
     const editPublishedItem = (data) => {
         setitemToEdit(data);
         setopenModalPublishItem(true);
@@ -124,21 +121,22 @@ function Inventario() {
     const openModal = () => {
         setitemToEdit(null);
         settypeForm("create");
-        setopenModalAddItem(true);
+        // setopenModalAddItem(true);
+        setOpenModalArticle(true);
     }
 
     let iconPath =  require('@mdi/js')['mdiCheckboxBlank'];
-
     let columns = [
-        // { field: 'id',          headerName: 'ID', width: 70 },
+        
         { 
             editable: true,
-            field: 'article.name',     
-            headerName: 'Nombre',
-            maxWidth: 250,
-            minWidth: 200,
+            field: 'id',     
+            headerName: '#',
+            maxWidth: 50,
+            minWidth: 50,
             flex: 1,
             sortable: false,
+            headerAlign: 'center',
             renderCell: (cellValues) => {
                 let data = cellValues;
                 
@@ -152,11 +150,36 @@ function Inventario() {
                             variant="body"
                             onClick={() => editItem(data.row)}
                         >
-                            {data.row.article.name} &nbsp; <i className="mdi mdi-pencil" />
+                            {data.row.id} &nbsp; <i className="mdi mdi-pencil" />
+                        </Typography>
+            }
+        },   
+        { 
+            editable: true,
+            field: 'name',     
+            headerName: 'Nombre',
+            maxWidth: 250,
+            minWidth: 200,
+            flex: 1,
+            sortable: true,
+            headerAlign: 'center',
+            renderCell: (cellValues) => {
+                let data = cellValues;                
+                return  <Typography 
+                            sx={{
+                                fontWeight: 'bold', 
+                                mb:0, 
+                                justifyContent: "start"
+                            }} 
+                            fullWidth 
+                            variant="body"
+                            onClick={() => editItem(data.row)}
+                        >
+                            {data.row.name.toUpperCase()} &nbsp; <i className="mdi mdi-pencil" />
                         </Typography>
             }
         },        
-        { 
+        /* { 
             editable: true,
             field: 'existence',    
             headerName: 'Existencia',
@@ -184,12 +207,12 @@ function Inventario() {
                     {count}
                 </Typography>
             }
-        },
+        }, */
         { 
             
             field: 'price',    
-            headerName: 'Precio',
-            sortable: false,
+            headerName: 'Precio Kg',
+            sortable: true,
             maxWidth: 150,
             minWidth: 100,
             flex: 1,
@@ -202,11 +225,11 @@ function Inventario() {
                 let dolarValue = data.row.dolarValue;
                 return <Tooltip title={`USD $${dolarValue}`} placement="top">
                             <Typography>
-                                Bs. {price}
+                                $ {price}
                             </Typography>
                         </Tooltip>
             }
-        },
+        }, /* ,
         { 
             field: 'minStock',    
             headerName: 'Mínimo',
@@ -245,65 +268,67 @@ function Inventario() {
                                 value={count}
                             />
                 }
-            */
-        },
+           
+        }    */ 
+        
         { 
-            editable: true,
+            editable: false,
             field: 'almacen',     
-            headerName: `Disponible`,
+            headerName: 'Disponible',
             maxWidth: 130,
             minWidth: 100,
             flex: 1,
-            sortable: false,
+            sortable: true,
+            headerAlign: 'center',
             renderCell: (cellValues) => {
                 let data = cellValues;
                 let almacen = data.row.almacen;
                 return <Typography>
-                    {almacen}
+                    {almacen} 
                 </Typography>
             }
-        },
+        },    
         { 
             field: 'asignados',     
             headerName: `Reservado`,
             maxWidth: 90,
             minWidth: 90,
             flex: 1,
-            sortable: false,
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                let text = data.row.asignados;
-                return <Typography>
-                    {text === null ? 0 : text}
-                </Typography>
-            }
+            sortable: true,
+            headerAlign: 'center'
         },
-        { 
-            field: 'lote',    
-            headerName: 'Lotes',
-            sortable: false,
-            maxWidth: 120,
-            minWidth: 120,
-            flex: 1,
-            headerAlign: 'center',
-            editable: false,
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                /// let text = data.row.asignados;
-                return <Button
-                variant="contained" 
-                color="primary" 
-                // onClick={() => editPublishedItem(cellValues.row)}
-            >
-               Lotes
-            </Button>
-            }
+        {
+            headerName: `Descarga`, 
+            headerAlign: 'center',    
+            maxWidth: 160,
+            minWidth: 160,   
+            renderCell: (params) => (              
+                <div>
+                    <ToggleButtonGroup>
+                        <Button
+                        variant="contained"                        
+                        color="primary" 
+                        onClick={() =>saveExcel(params.row.id)}
+                        >
+                            XLS
+                        </Button>
+                        <Button
+                        variant="contained" 
+                        color="primary" 
+                        onClick={() =>saveExcel(params.row.id)}
+                        >
+                            PDF
+                        </Button>
+                    </ToggleButtonGroup>   
+                </div>
+            )
+            
             
         },
         { 
-            field: 'id',    
+            field: 'isPublished',    
             headerName: 'Acción',
-            sortable: false,
+            sortable: true,
             maxWidth: 120,
             minWidth: 120,
             flex: 1,
@@ -312,7 +337,8 @@ function Inventario() {
                 let isPublished = cellValues.row.isPublished;
 
                 return <Button
-                    variant="contained" 
+                    
+                    variant={isPublished ? "contained" : "outlined"}
                     color="primary" 
                     onClick={() => editPublishedItem(cellValues.row)}
                 >
@@ -322,6 +348,31 @@ function Inventario() {
         },
     ];
 
+    const downloadItemArtice=(articleId)=>{        
+        axios({
+            method: "GET",
+            url:    "/Inventory/Itemlot/true/"+articleId,
+            responseType: 'blob'
+        }            
+        ).then((res) => {
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${Date.now()}.xls`);
+            document.body.appendChild(link);
+            link.click();           
+            if(res.data.result){
+                
+                toast.success(res.data.message);
+                
+            }else{
+                toast.success(res.data.message);
+            }
+
+        }).catch((err) => {
+            toast.error(err);
+        });
+    }
     const editItemData = (itemData) => {
 
         let data = {
@@ -333,18 +384,14 @@ function Inventario() {
 
         setsending(true);
         setalertSuccessMessage("");
-
         axios({
             method: "PUT",
             url:    urlEditItemData,
             data
-        }
-            // config
+        }            
         ).then((res) => {
 
-            // setsending(false);
             setchangeInputStock(false);
-
             setalertSuccessMessage(res.data.message);
             getList();
 
@@ -363,11 +410,8 @@ function Inventario() {
     }
 
     const handleCellEditStop = (params) => {
-        // console.log(params);
         let dataBeforeEdit = params.row;
         if(dataBeforeEdit[params.field] !== params.value){
-
-            console.log("Edit");
             // ------------------Edit-------------------------
             dataBeforeEdit[params.field] = params.value;
             console.log(dataBeforeEdit);
@@ -399,16 +443,9 @@ function Inventario() {
 
             let list        = [...data];
             let item        = list.find(item => item.id === id);
-            let index       = list.indexOf(item);
-            
-            // console.log(list);
-            // console.log(index);
-            // console.log(list[index]);
-
+            let index       = list.indexOf(item);            
             item.existence  = newCount;
             list[index]     = item;
-
-
             setlist(list);
             setcount(count * 20);
         }
@@ -418,6 +455,101 @@ function Inventario() {
         setopenModalAddItem(false);
     }
 
+    const columnsXLS = [
+        { header: '#', key: 'numOrder' },
+        { header: 'Especie', key: 'name' },
+        { header: 'Peso Kg', key: 'lots.itemLots.weight' },
+        { header: 'Precio $ ', key:'weightPrice'},
+        { header: 'note', key: 'lots.itemLots.note' },
+        { header: 'code', key: 'lots.itemLots.id' }
+      ];
+ 
+
+
+    const getStockArticle= async (art)=>{                
+        const url = "/INVETORY/get/Article/"+art;
+        await axios.get(url).then((res) => { 
+            console.log('----userdata----- '+ res.result);
+            console.log(res.data);          
+             if(res.result){                 
+                setStockdata(res.data);               
+                
+             }else{
+                setStockdata([]);                 
+             }             
+                 
+         }).catch((err) => {
+             console.error(err);
+         }); 
+         
+    }
+    
+    const workSheetName = 'hoja-1';    
+    const workbook = new Excel.Workbook(); 
+    const saveExcel = async (artId) => {
+         try {           
+            getStockArticle(artId); 
+            if(stockdata && stockdata.length>0){
+                
+                const fileName = stockdata.length>0?stockdata[0].name +"-"+ moment().format('YYY-MM-DD') : 'stock' ;                
+                // creating one worksheet in workbook
+                const worksheet = workbook.addWorksheet(workSheetName);
+        
+                // add worksheet columns
+                // each columns contains header and its mapping key from data
+                worksheet.columns = columnsXLS;
+        
+                // updated the font for first row.
+                worksheet.getRow(1).font = { bold: true };
+        
+                // loop through all of the columns and set the alignment with width.
+                worksheet.columns.forEach(column => {
+                column.width = column.header.length + 5;
+                column.alignment = { horizontal: 'left' };
+                });
+        
+                // loop through data and add each one to worksheet
+                stockdata.forEach(singleData => {
+                worksheet.addRow(singleData);
+                });
+        
+                // loop through all of the rows and set the outline style.
+                worksheet.eachRow({ includeEmpty: false }, row => {
+                // store each cell to currentCell
+                const currentCell = row._cells;
+        
+                // loop through currentCell to apply border only for the non-empty cell of excel
+                currentCell.forEach(singleCell => {
+                    // store the cell address i.e. A1, A2, A3, B1, B2, B3, ...
+                    const cellAddress = singleCell._address;
+        
+                    // apply border
+                    worksheet.getCell(cellAddress).border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                    };
+                });
+                });
+        
+                // write the content using writeBuffer
+                const buf = await workbook.xlsx.writeBuffer();
+        
+                // download the processed file
+                saveAs(new Blob([buf]), `${fileName}.xlsx`);
+            }
+            
+         }catch(error){
+            console.log(error);
+         } finally {
+            // removing worksheet's instance to create new one
+            workbook.removeWorksheet(workSheetName);
+         }
+                       
+            setStockdata([])
+    }
+  
     return (
         <Page title="Inventario | Bosque Marino">
         <Container maxWidth="xl">
@@ -449,6 +581,17 @@ function Inventario() {
                     reset={() => resetList()}
                 />
             }
+            {openModalArticle && 
+                <AddArticleModal
+                    show={openModalArticle}
+                    handleShowModal={(show) => {
+                        setOpenModalArticle(false);
+                    }}
+                    permissions={permissions}                  
+                    reset={() => resetList()}
+                
+                />
+            }
             
             <Grid sx={{ pb: 3 }} item xs={12}>
                 {!loading &&
@@ -463,7 +606,7 @@ function Inventario() {
                                         fullWidth sx={{px : 3}} 
                                         size="normal"
                                     >
-                                        Añadir Lote
+                                        Añadir especie
                                     </Button>
                                 </Grid>
                                 {/* 
@@ -631,34 +774,3 @@ function Inventario() {
 
 
 export default Inventario;
-
-/*
-    <Grid container alignItems="center">
-                <Grid xs={4} item sx={{px: .5}}>
-                    <Button disabled={sending} onClick={() => changeStock(data.row.id, count - 1)} type="button" size="small" sx={{py: 1.5, px: 0, minWidth: 0, width: "100%"}} color="primary" variant="contained">
-                        <Icon icon={CaretLeft} />
-                    </Button>
-                </Grid>
-                <Grid xs={4} item>
-                    <TextField
-                        hiddenLabel
-                        size='small'
-                        fullWidth
-                        autoComplete="lastname"
-                        type="number"
-                        label=""
-                        sx={{ borderColor: colorAlert}}
-                        InputProps={{
-                            readOnly: true,
-                            style: {textAlign: 'center', color: colorAlert}
-                        }}
-                        value={count}
-                    />
-                </Grid>
-                <Grid xs={4} item sx={{px: .5}}>
-                    <Button disabled={sending} onClick={() => changeStock(data.row.id, count + 1)} type="button" size="small" sx={{py: 1.5, px: 0, minWidth: 0, width: "100%"}} color="primary" variant="contained">
-                        <Icon icon={CaretRight} />
-                    </Button>
-                </Grid>
-    </Grid>
-*/
