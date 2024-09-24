@@ -262,7 +262,7 @@ export default function RestorePassword() {
     ];
 
     return (
-        <Page title="Restaurar password | RepuestosGo">
+        <Page title="Restaurar password | Bosque Marino">
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">

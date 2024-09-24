@@ -21,9 +21,9 @@ import {
     InputLabel, 
     FormControl,
     Switch,
-    FormControlLabel
+    FormControlLabel,
+    
 } from '@mui/material';
-
 import { LoadingButton } from '@mui/lab';
 import { alpha, styled } from '@mui/material/styles';
 
@@ -53,6 +53,27 @@ const RootStyle = styled(Card)(({ theme }) => ({
     maxWidth: "600px",
     backgroundColor: "#fff",
 }));
+const CloseModal = styled('div')(({ theme }) => ({
+   position:'absolute',
+   top:'20px',
+   right:'20px',
+   width:'30px',
+   height:'30px',
+   border:'none',
+   background:'none',
+   cursor:'pointer',
+   transition: '.3s ease all',
+   borderRadius:'5px',
+   color:'#1766DC',
+   hover:{
+    background:'#F2F2F2'
+   },
+   svg:{
+        width:'100%',
+        height:'100%'
+   }
+
+}));
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -68,34 +89,38 @@ const MenuProps = {
 
 function AddArticleModal({ 
     show = false, 
-    handleShowModal = (show) => {}, 
+    handleShowModal = (show) => {
+       
+    }, 
     reset = () => {},
     permissions = null,
-    edit = null
+    edit = null,
+    actionType=null
 }) {
-
+    
     const urlNewItem                                    = "/INVETOry/aricle/new";
     const urlEditItem                                   = "/InVETOrY/aricLe/EdIT";
-    const [isActived,setIsActived]                      =useState(false);
-    const [isSUW,setIsSUW]                                =useState(false);
-    const [typeForm, settypeForm]                       = useState("create");
+    const [isActived,setIsActived]                      =useState(edit?edit.isActived:false);
+    const [isSUW,setIsSUW]                                =useState(edit?edit.isSUW:false);
+    const [isPublished,setIsPublished]                  =useState(edit?edit.isPublished:false);
+    const [typeForm, settypeForm]                       = useState(actionType);
     const [itemToEdit, setitemToEdit]                   = useState(null);
-
+    const [showAddArticleModal, setshowAddArticleModal] = useState(false);
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
     const [alertErrorMessage,   setalertErrorMessage]   = useState("");
-
-    const handleChangeStatus = () => {    
-        setIsActived((prev) => !prev);
+  
+    const handleChangeStatus = (event) => {    
+        setIsActived(event.target.checked);
       }; 
-    const handleChangeSUW  =() => {
-        setIsSUW((prev) => !prev);
+    const handleChangeSUW  =(event) => {
+        setIsSUW(event.target.checked);
       };  
     const [sending, setsending]                         = useState(false);
 
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
         description:        Yup.string().required('Debe ingresar una descripción'),        
-        MainPhoto:          Yup.string().required('Debe ingresar URL'), 
+        image:              Yup.string().required('Debe ingresar URL'), 
         price:              Yup.number().required('Debe ingresar precio'), 
         minStock:           Yup.number().required('Debe ingresar stock'),
     });
@@ -106,43 +131,34 @@ function AddArticleModal({
             name:             "",
             description:      "",            
             price:            "",
-            imge:             "",
+            image:            "",
             minStock:         "",
             isActived:        "",
             isSUW:            ""
         },
-        validationSchema: LoginSchema,
+        // validationSchema: LoginSchema,
         onSubmit: async (values, {resetForm}) => {
             try {
-
+                    
                 let data = {
-                    name:         values.name,
-                    description:  values.description,
-                    minStock:     values.minStock,
-                    image:        values.MainPhoto,
-                    price:        values.price,
+                    id:           edit.id,  
+                    name:         !values.name?edit.name:values.name,
+                    description:  !values.description?edit.description:values.description,
+                    minStock:     !values.minStock?edit.minStock:values.minStock,
+                    image:        !values.image?edit.image:values.image,
+                    price:        !values.price?edit.price:values.price,
                     isActived,
                     isSUW
                 }
-
-                if(typeForm === "create"){
-                    data.existence = 1;
-                }else{
-                    data.id        = itemToEdit.id;
-                }
-
-                console.log(data);
+                console.log('---- values -----')
+                console.log(data) 
                 setsending(true);
-
                 axios({
                     method: typeForm === "create" ? "POST" : "PUT",
                     url:    typeForm === "create" ? urlNewItem : urlEditItem,
                     data
                 }).then((res) => {
-
-                    console.log(res);
-                    setsending(false);
-                    
+                    setsending(false);                                   
                     if(res.data.result){
                         if(reset){
                             toast.success(res.data.message);
@@ -172,7 +188,7 @@ function AddArticleModal({
     return (
         <Modal
                 open={show}
-                onClose={handleShowModal}
+                onClose={() => handleShowModal(false)}
                 aria-labelledby="modal-add-item-to-inventory"
                 aria-describedby="modal-add-item-to-inventory"
                 style={{ 
@@ -184,8 +200,12 @@ function AddArticleModal({
                 <RootStyle>
 
                 <FormikProvider value={formik}>
-                    <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
-
+                    <Form autoComplete="off" noValidate onSubmit={handleSubmit} id="form1">
+                    <CloseModal onClick={() => handleShowModal(false)}> 
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
+                            <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                        </svg>
+                    </CloseModal>
                     <Typography id="modal-modal-title" variant="h3" component="h3">
                         {typeForm === "create" ? "Agregar un artículo" : "Editar un artículo"}
                     </Typography>
@@ -194,28 +214,37 @@ function AddArticleModal({
                         <Grid sx={{mb: 2}} item md={typeForm === "create" ? 4 : 4} xs={4}>
                             <Stack spacing={1}>
                                 <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
                                     size='small'
                                     fullWidth
                                     autoComplete="name"
                                     type="text"
                                     label="Nombre"
                                     required
-                                    {...getFieldProps('name')}
+                                    defaultValue={edit?edit.name:""}
+                                    onChange={(e) => formik.setFieldValue('name', e.target.value)}                        
                                     error={Boolean(touched.name && errors.name)}
-                                    helperText={touched.name && errors.name}
+                                    helperText={touched.name && errors.name}  
+                                                                     
                                 />         
                             </Stack>
                         </Grid>
                         <Grid sx={{mb: 2}} item md={typeForm === "create" ? 4 : 4} xs={4}>
                             <Stack spacing={1}>
                                 <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
                                     size='small'
                                     fullWidth
                                     autoComplete="price"
                                     type="number"
                                     label="Precio"
                                     required
-                                    {...getFieldProps('price')}
+                                    defaultValue={edit?edit.price:""} 
+                                    onChange={(e) => formik.setFieldValue('price', e.target.value)} 
                                     error={Boolean(touched.price && errors.price)}
                                     helperText={touched.price && errors.price}
                                 />         
@@ -225,6 +254,9 @@ function AddArticleModal({
                         <Grid sx={{mb: 2}} item md={4} xs={4}>
                             <Stack spacing={1}>
                                 <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
                                     size='small'
                                     fullWidth
                                     autoComplete="Stock min."
@@ -234,8 +266,8 @@ function AddArticleModal({
                                     InputProps={{
                                         type: "number"
                                     }}
-
-                                    {...getFieldProps('minStock')}
+                                    onChange={(e) => formik.setFieldValue('minStock', e.target.value)} 
+                                    defaultValue={edit?edit.minStock:""} 
                                     error={Boolean(touched.minStock && errors.minStock)}
                                     helperText={touched.minStock && errors.minStock}
                                 />         
@@ -250,15 +282,14 @@ function AddArticleModal({
                                 <Switch
                                     onChange={handleChangeStatus}
                                     name="isActived"
-                                    color="primary" 
-                                    required
-                                    checked={isActived}                                           
+                                    color="primary"                                                      
+                                    defaultChecked={edit?edit.isActived:true}                                          
                                 />
                                 }                                            
                                 label={isActived ? "Activo" : "Inactivo"}
                             />  
                         </Grid>
-                        <Grid item md={1}>
+                        <Grid item md={4}>
                             {/* Tipo de venta del producto */}
                             
                             <FormControlLabel
@@ -267,36 +298,71 @@ function AddArticleModal({
                                 <Switch
                                     onChange={handleChangeSUW}
                                     name="isSUW"
-                                    color="primary" 
-                                    checked={isSUW}
-                                    required                                               
+                                    color="primary"                                     
+                                    defaultChecked={edit?edit.isSUW:true}                                                
                                 />
                                 }                                            
-                                 label={isSUW ? "VUP" : "VP"}
+                                 label={isSUW ? "Peso unitario" : "Granel"}
                                 // label={`Switch is ${isSUW? 'ON':'OFF'}`}
                             />  
+                        </Grid>
+                        <Grid item md={4}>
+                            {/* Tipo de venta del producto */}
+                            
+                            <Typography 
+                                sx={{
+                                    fontWeight: 'bold', 
+                                    align:'justify'
+                                    
+                                }} 
+                                fullWidth 
+                               
+                            >
+                            {isPublished?"Publicado":" Sin Publicar"} 
+                        </Typography> 
                         </Grid>
                         <Grid sx={{mb: 2}} item xs={12}>
                             <FormControl fullWidth size="small" sx={{mb: 2}}>
                                 <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
                                     label="URL imagen"
                                     size="small"
                                     fullWidth
-                                    required
-                                    // value={values.MainPhoto}
-                                    // defaultValue={values.MainPhoto}
-                                    {...getFieldProps('MainPhoto')}
-                                    helperText={touched.MainPhoto && errors.MainPhoto} 
-                                    error={Boolean(touched.MainPhoto && errors.MainPhoto)} 
-                                    // onChange={(e) => formik.setFieldValue('MainPhoto', e.target.value)}
+                                    required                                    
+                                    defaultValue={edit?edit.image:""}                                    
+                                    onChange={(e) => formik.setFieldValue('image', e.target.value)}
                                     
                                     placeholder="URL imagen"
                                 />
                             </FormControl>
                         </Grid>
                         <Grid sx={{mb: 2}} item xs={12}>
+                            <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    label="Imagen pequeña 256 x 256"
+                                    size="small"
+                                    fullWidth
+                                    required                                    
+                                    defaultValue={edit?edit.smallImage:""} 
+                                    helperText={touched.smallImage && errors.smallImage} 
+                                    error={Boolean(touched.smallImage && errors.smallImage)} 
+                                    // onChange={(e) => formik.setFieldValue('MainPhoto', e.target.value)}
+                                    
+                                    placeholder="Imagen pequeña 256 x 256"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid sx={{mb: 2}} item xs={12}>
                             <Stack spacing={3}>
                                 <TextField
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
                                     size='small'
                                     fullWidth
                                     autoComplete="description"
@@ -306,8 +372,8 @@ function AddArticleModal({
                                     multiline
                                     rows={2}
                                     maxRows={4}
-
-                                    {...getFieldProps('description')}
+                                    defaultValue={edit?edit.description:""} 
+                                    onChange={(e) => formik.setFieldValue('description', e.target.value)}
                                     error={Boolean(touched.description && errors.description)}
                                     helperText={touched.description && errors.description}
                                 />         
@@ -322,11 +388,11 @@ function AddArticleModal({
                         variant="contained"
                         loading={sending}
                         color="primary"
-                        disabled={
+                       /*  disabled={
                             (!permissions.crea && typeForm === "create") || 
                             (!permissions.edita && typeForm === "edit")  || 
                             (values.name === "" || values.description === "")
-                        }
+                        } */
                     >
                         {typeForm === "create" ? "Agregar" : "Editar"}
                     </LoadingButton>

@@ -1,5 +1,4 @@
 import {useState, useEffect} from "react"
-import * as Yup from 'yup';
 import { useFormik, Form, FormikProvider } from 'formik';
 import { Link, useLocation } from 'react-router-dom';
 import Excel from 'exceljs';
@@ -15,20 +14,15 @@ import { DataGrid, DataGridProps } from '@mui/x-data-grid';
 import Page from '../../../../components/Page';
 import axios from "../../../../auth/fetch"
 import Loader from '../../../../components/Loader/Loader';
-
-import Icon from '@mdi/react';
-import CaretDown from "@iconify/icons-ant-design/caret-down"
-import CaretUp from "@iconify/icons-ant-design/caret-up"
-import CaretRight from "@iconify/icons-ant-design/caret-right"
-import CaretLeft from "@iconify/icons-ant-design/caret-left"
 import { getPermissions } from "../../../../utils/getPermissions";
 import { useSelector } from "react-redux";
 import { toast } from 'react-toastify';
 import ExportExcel from "react-export-excel"
 import AddArticleModal from "./modal/AddArticleModal";
-import AddInventoryModal from "./modal/AddInventoryModal";
 import ChangePublishedStatusModal from "./modal/ChangePublishedStatusModal";
 import LotesArticleModal from "./modal/LotesArticleModalFull";
+import { parseJSON } from "date-fns";
+import { da } from "date-fns/locale";
 
 const ExcelJS = require("exceljs");
 
@@ -38,7 +32,7 @@ const ExcelColumn   = ExportExcel.ExcelColumn;
 
 // ----------------------------------------------------------------------
 
-function Inventario() {
+function Catalog() {
 
     // const [data, setdata]                            = useState(rows);
     const [count, setcount]                             = useState(0);    
@@ -66,7 +60,7 @@ function Inventario() {
     const [currentArticle, setCurrentArticle]           =useState([{id:0}])
     // const [items,setItems]                              =useState("[{}]");;
    
-    const urlGetData        = "/InveTorY/get/ALL";
+    const urlGetData        = "/Inventory/get/*/true/true/1" // "/InveTorY/get/ALL";
     const urlEditItemData   = "/InvEToRY/UpdaTE/ARTICLE";
 
     // Permissions
@@ -78,16 +72,28 @@ function Inventario() {
 
         setsearch(true);
         axios.get(urlGetData)
-        .then((res) => {
-            settypeForm("create");
-            setitemToEdit(null);
-
-            setdata(res);          
-            setlist(res.items);
-
-            setsending(false);
-            setloading(false);
-
+        .then((res) => {  
+            if(res.result){
+                setdata(res.data);
+                setlist(res.data);
+                setsending(false);
+                setloading(false);
+                /* let dta=res.data;
+                let qty="";
+                for (let index = 0; index < dta.length; index++) {                
+                    for (let kindex = 0; kindex < dta.length; kindex++) {
+                        
+                        dta[index].stock= dta[index].lots[kindex].itemLots.length
+                       // qty=dta[index].lots[kindex].itemLots.length;
+                    }
+                    // dta[index]['stock']=qty;
+                } */
+               console.log("ls")
+                console.log(res.data) 
+            }               
+             
+            
+                       
         }).catch((err) => {
 
             let error = err.response;
@@ -127,7 +133,9 @@ function Inventario() {
         }else{            
             setitemToEdit({});        
             settypeForm("create");
-        }       
+        }
+        
+        
         
         // setopenModalAddItem(true);
         setOpenModalArticle(true);
@@ -159,7 +167,8 @@ function Inventario() {
                             {data.row.id} &nbsp; <i className="mdi mdi-pencil" />
                         </Typography>
             }
-        }, 
+        },
+ 
         { 
             editable: true,
             field: 'image',     
@@ -171,7 +180,7 @@ function Inventario() {
             headerAlign: 'center',
             renderCell: (cellValues) => {
                 let data = cellValues;                
-                return  <div className=" container mx-auto overflow-hidden h-10 w-14 opacity-50 " > 
+                return  <div className=" container mx-auto overflow-hidden h-10 w-14 " > 
                     <img               
                         src={`${cellValues.row.image}`}
                         alt={cellValues.row.name}
@@ -182,55 +191,24 @@ function Inventario() {
             }
         },  
         { 
-            editable: true,
-            field: 'name',     
-            headerName: 'Nombre',
-            maxWidth: 250,
-            minWidth: 200,
-            flex: 1,
+            
+            field: 'name',    
+            headerName: 'Especie',
             sortable: true,
-            headerAlign: 'center',
-            renderCell: (cellValues) => {
-                let data = cellValues;                
-                return  <Typography 
-                            sx={{
-                                fontWeight: 'bold', 
-                                mb:0, 
-                                justifyContent: "start"
-                            }} 
-                            fullWidth 
-                            variant="body"
-                            onClick={() => editItem
-                                (data.row)} 
-                        >
-                            {data.row.name.toUpperCase()} &nbsp; <i className="mdi mdi-pencil" />
-                        </Typography>
-            }
-        },   
-        { 
-            editable: true,
-            field: 'isActived',     
-            headerName: 'Status',
-            maxWidth: 80,
-            minWidth: 60,
+            maxWidth: 150,
+            minWidth: 100,
             flex: 1,
-            sortable: true,
             headerAlign: 'center',
-            renderCell: (cellValues) => {
+            editable: true,
+            type: 'number',
+            renderCell: (cellValues) => { 
                 let data = cellValues;                
-                return  <Typography 
-                            sx={{
-                                fontWeight: 'bold', 
-                                mb:0, 
-                                justifyContent: "start"
-                            }} 
-                            fullWidth 
-                            variant="body"                            
-                        >
-                            {data.row.isActived?"Activo":"Inactivo"}
+                return <Typography>
+                                {cellValues.row.name}
                         </Typography>
+                        
             }
-        },                
+        },       
         { 
             
             field: 'price',    
@@ -244,66 +222,54 @@ function Inventario() {
             type: 'number',
             renderCell: (cellValues) => {
                 let data = cellValues;
-                let price = data.row.price;
-                let dolarValue = data.row.dolarValue;
-                return <Tooltip title={`USD $${dolarValue}`} placement="top">
-                            <Typography>
-                                $ {price}
-                            </Typography>
-                        </Tooltip>
-            }
-        }, /* ,
-        { 
-            field: 'minStock',    
-            headerName: 'Mínimo',
-            sortable: false,
-            maxWidth: 90,
-            minWidth: 90,
-            flex: 1,
-            headerAlign: 'center',
-            editable: true,
-            type: 'number',
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                let minStock = data.row.minStock;
-                
+                let price = cellValues.row.price;               
                 return <Typography>
-                    {minStock}
-                </Typography>
+                            $ {price}
+                        </Typography>
+                        
             }
-
-             */ 
-        
-        { 
-            editable: false,
-            field: 'almacen',     
-            headerName: 'Disponible',
-            maxWidth: 130,
-            minWidth: 100,
-            flex: 1,
-            sortable: true,
-            headerAlign: 'center',
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                let almacen = data.row.almacen;
-                return <Typography>
-                    {almacen} 
-                </Typography>
-            }
-        },    
-        { 
-            field: 'asignados',     
-            headerName: `Reservados`,
-            maxWidth: 90,
-            minWidth: 90,
-            flex: 1,
-            sortable: true,
-            headerAlign: 'center'
         },
         {
+            field:'stock',
+            headerName: `Stock`,            
+            sortable: false,
+            headerAlign: 'center',    
+            maxWidth: 160,
+            minWidth: 160,   
+            renderCell: (cellValues) => {              
+                let unid= cellValues.row.isSUW?"Uds":"kg";
+                return  <Typography>
+                        {cellValues.row.stock } {cellValues.row.isSUW?" Uds":" Kg"} 
+                        </Typography>
+            }
+            
+            
+        },
+        {
+            field:'',
+            sortable: false,
+            headerAlign: 'center',                
+            maxWidth: 160,
+            minWidth: 160,   
+            renderCell: (params) => (              
+                <div>
+                    <Button 
+                    onClick={() => openModal({id:0})} 
+                    variant="contained" 
+                    color="primary" 
+                    fullWidth sx={{px : 3}} 
+                    size="normal"
+                >
+                        Detalle
+                    </Button>                    
+                </div>
+            )
+        },
+        {
+              
             headerName: `Descarga`, 
-            headerAlign: 'center',  
-            align: 'center',  
+            headerAlign: 'center',
+            sortable: false,    
             maxWidth: 160,
             minWidth: 160,   
             renderCell: (params) => (              
@@ -328,29 +294,7 @@ function Inventario() {
             )
             
             
-        },
-        { 
-            field: 'isPublished',    
-            headerName: 'Acción',
-            sortable: true,
-            maxWidth: 120,
-            minWidth: 120,
-            align: 'center',
-            flex: 1,
-            headerAlign: 'center',
-            renderCell: (cellValues) => {
-                let isPublished = cellValues.row.isPublished;
-
-                return <Button
-                    
-                    variant={isPublished ? "contained" : "outlined"}
-                    color="primary" 
-                    onClick={() => editPublishedItem(cellValues.row)}
-                >
-                    {isPublished ? 'Ocultar' : 'Publicar'}
-                </Button>
-            }
-        },
+        }
         
     ];
     
@@ -416,25 +360,9 @@ function Inventario() {
         setitemToEdit(null);
     }
 
-    let  items = list !== null ? list.filter(item => item.hasOwnProperty("id")) : [];
+    // let  items = list !== null ? list.filter(item => item.hasOwnProperty("id")) : [];
 
-    const changeStock = (id, newCount) => {
-        if(newCount >= 0){
-            setchangeInputStock(true);
 
-            let list        = [...data];
-            let item        = list.find(item => item.id === id);
-            let index       = list.indexOf(item);            
-            item.existence  = newCount;
-            list[index]     = item;
-            setlist(list);
-            setcount(count * 20);
-        }
-    }
-
-    const handleCloseModalAddItem = () => {
-        setopenModalAddItem(false);
-    }
 
     const columnsXLS = [
         { header: '#', key: 'numOrder' },
@@ -534,7 +462,7 @@ function Inventario() {
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">
-                    Inventario
+                    Catalogo
                 </Typography>
             </Box>
 
@@ -544,33 +472,33 @@ function Inventario() {
                     handleShowModal={(show) => {
                         setopenModalPublishItem(false);
                     }}
-                    edit={itemToEdit}
+                    // edit={itemToEdit}
                     reset={() => resetList()}
                 />
             }
 
             {openModalAddItem &&
                 <LotesArticleModal 
-                    show={openModalAddItem}
-                    handleShowModal={(show) => {
-                        setopenModalAddItem(false);
-                    }}
-                    permissions={permissions}
-                    edit={itemToEdit}
-                    actionType={typeForm}
+                    // show={openModalAddItem}
+                     handleShowModal={(show) => {
+                        setopenModalAddItem(show);
+                    }} 
+                    // permissions={permissions}
+                    // edit={itemToEdit}
+                    // actionType={typeForm}
                     reset={() => resetList()}
                 />
             }
             {openModalArticle && 
                 <AddArticleModal
                     show={openModalArticle}
-                    handleShowModal={(show) => {
+                     handleShowModal={(show) => {
                         setOpenModalArticle(false);
                     }}
                     permissions={permissions}                  
                     reset={() => resetList()}
                     edit={itemToEdit}
-                    actionType={typeForm}
+                    actionType={typeForm} 
                 
                 />
             }
@@ -579,19 +507,8 @@ function Inventario() {
                 {!loading &&
                     <Card>
                         <CardContent>
-                            <Grid container justifyContent="space-between" columnSpacing={1}>
+                            <Grid container justifyContent="space-between" columnSpacing={1}>                                
                                 <Grid sx={{mb: 2}} item md={3} xs={12}>
-                                    <Button 
-                                        onClick={() => openModal({id:0})} 
-                                        variant="contained" 
-                                        color="primary" 
-                                        fullWidth sx={{px : 3}} 
-                                        size="normal"
-                                    >
-                                        Añadir especie
-                                    </Button>
-                                </Grid>
-                                <Grid>
                                     
                                     <Button variant="contained"
                                     onClick={() => getList()} >
@@ -622,92 +539,36 @@ function Inventario() {
                                         </Alert>
                                     */}
 
-                            <Grid container columnSpacing={3} justifyContent="end">
-                                {/* <Grid md="auto" item xs={12} sx={{mb: 2}}>
-                                    Total 
-                                    <Typography sx={{fontWeight: "bold", ml: 1}} component="span">
-                                        Bs {data.bolivaresTotalInventory}
-                                    </Typography> 
-                                </Grid> */}
-                                {/* <Grid md="auto" item xs={12} sx={{mb: 2}}>
-                                    Inventario total
-                                    <Typography sx={{fontWeight: "bold", ml: 1, align:"left"}} component="span">
-                                        USD ${data.dolarTotalInventory}
-                                    </Typography> 
-                                </Grid> */}
-                            </Grid>
                             
-                            <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
-                                <DataGrid 
-                                    sx={{mb:12}}
-                                    rows={items}
-                                    columns={columns}
+                                    <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
+                                        <DataGrid 
+                                            sx={{mb:12}}
+                                            rows={list}
+                                            columns={columns}
 
-                                    // onCellEditStop={(params) => handleCellEditStop(params)}
-                                    // experimentalFeatures={{ newEditingApi: true }}
-                                    // onCellEditStart={(params) => handleCellEditStart(params)}
-                                    // processRowUpdate={processRowUpdate}
+                                            // onCellEditStop={(params) => handleCellEditStop(params)}
+                                            // experimentalFeatures={{ newEditingApi: true }}
+                                            // onCellEditStart={(params) => handleCellEditStart(params)}
+                                            // processRowUpdate={processRowUpdate}
 
-                                    onCellEditCommit={(params) => handleCellEditStop(params)}
-                                    onCellFocusOut={(params)   => validateChanges(params)}
-                                    
-                                    // page={0}
-                                    pageSize={6}
-                                    rowsPerPageOptions={[6,10,20]}
-                                    autoPageSize
-                                    rowCount={items.length}
+                                            onCellEditCommit={(params) => handleCellEditStop(params)}
+                                            onCellFocusOut={(params)   => validateChanges(params)}
+                                            
+                                            // page={0}
+                                            pageSize={6}
+                                            rowsPerPageOptions={[6,10,20]}
+                                            autoPageSize
+                                            rowCount={list.length}
 
-                                    // disableColumnFilter
-                                    // disableColumnMenu
-                                    autoHeight 
-                                    disableColumnSelector
-                                    disableSelectionOnClick
-                                    // editable
-                                    // checkboxSelection
-                                />
-                            </div>
-
-                                    {/* <ul style={{listStyle: "none"}}>
-                                        <li>
-                                            <Typography variant="h6" color="success" alignItems="center" flex>
-                                                <Typography component="span" color="#54D62C">
-                                                    <Icon path={iconPath} size={.9} />
-                                                </Typography>
-                                                <Typography sx={{ml: 2}} component="span" color="text.primary">
-                                                    <Typography sx={{fontWeight: "bold", mr: 1}} component="span">
-                                                        Satisfactorio:
-                                                    </Typography> 
-                                                    Articulo con alta solvencia.
-                                                </Typography>
-                                            </Typography>
-                                        </li>
-                                        <li>
-                                            <Typography variant="h6" color="warning" alignItems="center" flex>
-                                                <Typography component="span" color="#FFC107">
-                                                    <Icon path={iconPath} size={.9} />
-                                                </Typography>
-                                                <Typography sx={{ml: 2}} component="span" color="text.primary">
-                                                    <Typography sx={{fontWeight: "bold", mr: 1}} component="span">
-                                                        Advertencia:
-                                                    </Typography> 
-                                                    Articulo cerca del stock mínimo.
-                                                </Typography>
-                                            </Typography>
-                                        </li>
-                                        <li>
-                                            <Typography variant="h6" color="primary" alignItems="center" flex>
-                                                <Typography component="span" color="#D0302A">
-                                                    <Icon path={iconPath} size={.9} />
-                                                </Typography>
-                                                <Typography sx={{ml: 2}} component="span" color="text.primary">
-                                                    <Typography sx={{fontWeight: "bold", mr: 1}} component="span">
-                                                        Alerta:
-                                                    </Typography> 
-                                                    Articulo igual o por debajo del stock mínimo.
-                                                </Typography>
-                                            </Typography>
-                                        </li>
-                                    </ul> */}
+                                            // disableColumnFilter
+                                            // disableColumnMenu
+                                            autoHeight 
+                                            disableColumnSelector
+                                            disableSelectionOnClick
+                                            // editable
+                                            // checkboxSelection
+                                        />
+                                    </div>                                    
                                 </div>
                             }
 
@@ -732,4 +593,4 @@ function Inventario() {
 }
 
 
-export default Inventario;
+export default Catalog;

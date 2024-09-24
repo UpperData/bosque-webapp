@@ -312,10 +312,9 @@ export default function Membership() {
         itemsCompleted = 0;
     }
 
-    console.log(data);
-
+    
     return (
-        <Page title="Membresías | RepuestosGo">
+        <Page title="Membresías | Bosque Marino">
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">

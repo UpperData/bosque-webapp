@@ -64,28 +64,37 @@ const MenuProps = {
     },
 };
 
-function ChangePublishedStatusModal({ 
+function ReleaseItemModalModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
     reset = () => {}, 
-    edit = null ,
+    item = null ,
 }) {
     const [sending, setsending] = useState(false);    
 
     const changeStatus = () => {
         setsending(true);
         let data = {
-            articleId:   edit.id, 
-            isPublished: !edit.isPublished
-        }        
-        axios.put('invetory/publishING/set', data).then((res) => {
-            toast.success(res.data.message);
-            if(res.data.result && data.isPublished){ // si se pudo publicar
+            "itemLot":{},
+            "accountId":null,
+            "isSUW":null
+            };
+            let shoppingCarId=null;
+            data.itemLot["shoppingCarId"]= item.id;
+            data.itemLot["id"]=item["itemLot.id"];
+            data.itemLot["lotId"]=item["itemLot.lot.id"];
+            data.accountId=item["account.id"];
+            data.isSUW=item["itemLot.lot.article.isSUW"];
+        console.log(data)
+        axios.put('/CAR/Cancel', data).then((res) => {
+          
+            toast.success(res.message);
+            if(res.result){ // si se pudo liberar
                 // envia notificación push
                 let dataPush={
-                     "msj":"¡Aprovecha!, reserva tu pescado nuestra App",
-                     "title":edit.name,
-                     "largeIcon":edit.image
+                     "msj":"¡Aprovecha!, reserva tu pescado con nuestra App",
+                     "title":item["itemLot.lot.article.name"]+ " - "+item["itemLot.weight"] + " Kg  disponible",
+                     "largeIcon":item["itemLot.lot.article.image"]
                      
                 }
                 axios.post('Notifications/SEND/push', dataPush).then((res) => {
@@ -117,10 +126,10 @@ function ChangePublishedStatusModal({
         >
             <RootStyle>
                 <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                    {!edit.isActived ? 'Ocultar artículo' : 'Publicar artículo'}
+                    Liberar pedido
                 </Typography>
                 <Typography id="modal-modal-title" variant="p" component="p" sx={{mb: 3}}>
-                    ¿Desea {!edit.isActived ? 'Ocultar' : 'Publicar'} {edit.name}?
+                     { "¿Desea liberar "+ item["itemLot.lot.article.name"]+" ( "+parseFloat(item["itemLot.weight"]).toFixed(2) +" Kg ) ?"}?
                 </Typography>
                 <Box flex justifyContent="center" sx={{mt: 2}}>
                     <LoadingButton 
@@ -132,7 +141,7 @@ function ChangePublishedStatusModal({
                         loading={sending}
                         disabled={sending}
                     >
-                        {edit.isPublished ? 'Ocultar' : 'Publicar'}
+                        Liberar
                     </LoadingButton>
                     <Button 
                         disabled={sending} 
@@ -148,4 +157,4 @@ function ChangePublishedStatusModal({
     )
 }
 
-export default ChangePublishedStatusModal;
+export default ReleaseItemModalModal;

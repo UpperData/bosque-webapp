@@ -34,7 +34,7 @@ import CurrencyExchange from './content/finanzas/CurrencyExchange';
 import Appointment from './content/reports/Appointment';
 import Inventory from './content/reports/Inventory';
 import Rrhh from './content/reports/Rrhh';
-
+import Catalog from './content/inventario/Catalog'
 import Contracts from './content/tiendas/Contracts';
 import AdmTiendas from './content/tiendas/AdmTiendas';
 import Administracion from './content/inventario/Administracion';
@@ -150,6 +150,7 @@ function Dashboard() {
 
                 {/* inventario */}
                 <Route path="InvenTorY/ADMIN"               element={<PrivateRoute><Inventario /></PrivateRoute>}/>
+                <Route path="InvenTorY/view"               element={<PrivateRoute><Catalog /></PrivateRoute>}/>
                 <Route path="InVeNTorY/assigment"               element={<PrivateRoute><Asignacion /></PrivateRoute>}/>
                 {/* <Route path="InvenTory/ADMIN"                   element={<PrivateRoute><Administracion /></PrivateRoute>}/> */}
 
@@ -167,7 +168,7 @@ function Dashboard() {
                 <Route path="Reports/RRHh"              element={<PrivateRoute><Rrhh /></PrivateRoute>}/>
 
                 {/* Notificaciones */}
-                <Route path='Notification/ws' element={<PrivateRoute> <Appointment /> </PrivateRoute>} />
+                {/* <Route path='Notification/ws' element={<PrivateRoute> <Appointment /> </PrivateRoute>} /> */}
             </Route>
             
             <Route path="*"       element={<Page404 />} />

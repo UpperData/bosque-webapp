@@ -49,7 +49,7 @@ const IconWrapperStyle = styled('div')(({ theme }) => ({
 
 export default function Home() {
   return (
-    <Page title="Dashboard | RepuestosGo">
+    <Page title="Dashboard | Bosque Marino">
       <Container maxWidth="xl">
         <Box sx={{ pb: 3 }}>
           <Typography 

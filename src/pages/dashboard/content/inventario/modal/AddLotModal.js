@@ -50,7 +50,7 @@ const RootStyle = styled(Card)(({ theme }) => ({
     padding: theme.spacing(5, 5),
     width: "95%",
     margin: "auto",
-    maxWidth: "600px",
+    maxWidth: "800px",
     backgroundColor: "#fff",
 }));
 
@@ -115,10 +115,8 @@ function AddLotModal({
                 note:         values.note,
                 isActived,
                 items: []
-            }
-                    console.log(data);
-            setsending(true);
-            
+            }                    
+            setsending(true);            
             axios({
                 method: currentLot.id > 0 ?   "PUT" :"POST",
                 url:    urlLots,

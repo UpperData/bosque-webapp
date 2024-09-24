@@ -74,18 +74,21 @@ function AddLotModal({
     reset = () => {},
     permissions = null,
     article = null,
-    currentItem=null   
+    articleId=null,
+    currentItem=null
+    
 
 }) {   
     
     const urlLots                                    = "/inVenTory/LotS/ITEMS";
     const [typeForm, settypeForm]                       = useState("create");
     const [itemToEdit, setitemToEdit]                   = useState(null);
-
+    const [search, setsearch]                           = useState(true);
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
     const [alertErrorMessage,   setalertErrorMessage]   = useState("");    
-    const [sending, setsending]                         = useState(false);
-
+    const [sending, setsending] = useState(false);
+    const [currentNumItem,setCurrentNumItem]            =useState("");
+    
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
         description:        Yup.string().required('Debe ingresar una descripción'),        
@@ -128,6 +131,7 @@ function AddLotModal({
                 if(res.data.result){                        
                     if(reset){
                         toast.success(res.data.message);
+                        numItem();
                         resetForm();
                         reset();
                     }
@@ -145,9 +149,31 @@ function AddLotModal({
             
         }
     });
-   
+    let ni=0
+    const numItem =  async ()  => {       
+        const url = '/Inventory/currentNumItem/'+articleId;
+         axios.get(url).then((res) => {           
+            if(res.result){
+                
+                ni=res.data;
+                // setCurrentNumItem(res.data); 
+                console.log("Next")
+                console.log(currentNumItem)                           
+                console.log(res.data) 
+                return  res.data     
+            }
+        }).catch((err) => {
+            console.error(err);
+        });
+    } 
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
-    
+    console.log("ni") 
+    console.log( currentNumItem) 
+    useEffect( async () => {  
+        if(search){              
+            await  numItem() 
+        };
+    }, []);
     return (
         
         <Modal
@@ -176,8 +202,25 @@ function AddLotModal({
                         <Grid container columnSpacing={3}>
                             <Grid item md={12} xs={12}>
 
-                                <Grid container columnSpacing={4}>                                                              
-                                    <Grid item md={6}>
+                                <Grid container columnSpacing={4}> 
+                                <Grid item md={3}>
+                                        {/* Fecha recibido */}
+                                        <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                            <TextField
+                                                InputLabelProps={{
+                                                    shrink: true,
+                                                }}
+                                                label="Num."
+                                                type="number"                                                
+                                                required
+                                                fullWidth 
+                                                defaultValue={currentNumItem}                                                                                                  
+                                                onChange={(e) => formik.setFieldValue('weight', e.target.value)}                                            
+                                                placeholder="Num"
+                                            /> 
+                                        </FormControl>    
+                                    </Grid>                                                             
+                                    <Grid item md={4}>
                                         {/* Fecha recibido */}
                                         <FormControl fullWidth size="small" sx={{mb: 2}}>
                                             <TextField
@@ -185,8 +228,7 @@ function AddLotModal({
                                                     shrink: true,
                                                 }}
                                                 label="Peso"
-                                                type="number"
-                                                size="small"
+                                                type="number"                                                
                                                 required
                                                 fullWidth 
                                                 defaultValue={currentItem.weight!==''?currentItem.weight:values.weight}                                                  
@@ -197,22 +239,24 @@ function AddLotModal({
                                             /> 
                                         </FormControl>    
                                     </Grid>
-                                    <Grid item md={6}>
+                                    <Grid item md={5}>
                                         {/* existencia */}
-                                        <FormControl fullWidth size="small" sx={{mb: 2}}>
-                                        <Select defaultValue={1}
+                                        <FormControl fullWidth  sx={{mb: 2}}>
+                                        <Select defaultValue={currentItem.conditionId}
+                                        
                                          onChange={(e) => formik.setFieldValue('conditionId', e.target.value)} 
                                         >
-                                            <MenuItem  value={1}>Disponible</MenuItem >
+                                            <MenuItem  value={0}>Seleccione</MenuItem >
+                                            <MenuItem  value={1} selected>Disponible</MenuItem >
                                             <MenuItem  value={2}>Reservado</MenuItem >
-                                            <MenuItem  tion value={3}>Vendido</MenuItem >
+                                            <MenuItem  value={3}>Vendido</MenuItem >
                                             <MenuItem  value={4}>Elimando</MenuItem >
                                         </Select> 
                                         </FormControl>    
                                     </Grid>
                                     <Grid item md={12}>
                                         {/* Nota */}                                    
-                                        <FormControl fullWidth size="small" sx={{mb: 2}}>                                    
+                                        <FormControl fullWidth  sx={{mb: 2}}>                                    
                                         <TextField                                    
                                         InputLabelProps={{
                                             shrink: true,

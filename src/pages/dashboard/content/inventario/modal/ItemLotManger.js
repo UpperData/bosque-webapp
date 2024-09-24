@@ -51,7 +51,7 @@ const RootStyle = styled(Card)(({ theme }) => ({
     padding: theme.spacing(5, 5),
     width: "95%",
     margin: "auto",
-    maxWidth: "600px",
+    maxWidth: "800px",
     backgroundColor: "#fff",
 }));
 
@@ -72,6 +72,7 @@ function ItemLotManger({
     handleShowModal = (show) => {}, 
     reset = () => {},    
     articleName = null,
+    articleId =null,
     permissions=null,
     lot=null
 }) {
@@ -85,13 +86,12 @@ function ItemLotManger({
     const [itemLots, setItemLots]                       = useState(false);
     const [showAddItemModal,setShowAddItemModal]        =useState(false); 
     const [currentItem, setCurrentItem]                 = useState([]);
-
+   
     const openAddItemModal = (row) => {
         row.name=lot.name;
         setCurrentItem(row);
-        setShowAddItemModal(true);        
-        console.log("Item actual");
-        console.log(row);
+        setShowAddItemModal(true);       
+      
     }
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
@@ -190,6 +190,7 @@ function ItemLotManger({
             console.error(err);
         });
     }
+
     const columns  = [    
         {         
             field: 'id',     
@@ -328,7 +329,8 @@ function ItemLotManger({
             }}
             permissions={permissions}
             reset={() => resetModalAddItem()}
-            articleName                        
+            articleName 
+            articleId={lot.articleId}                     
             currentItem={currentItem}
         />}
         <Modal

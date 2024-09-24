@@ -2,7 +2,7 @@ import {useState, useEffect} from "react"
 import * as Yup from 'yup';
 import { useFormik, Form, FormikProvider } from 'formik';
 // material
-import { CardContent, Hidden, Box, Grid, Stack, ButtonGroup, Container, Typography,Alert,  Card, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import { Divider,CardContent, Hidden, Box, Grid, Stack, ButtonGroup, Container, Typography,Alert,  Card, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { LoadingButton } from '@mui/lab';
 import { alpha, styled } from '@mui/material/styles';
@@ -10,7 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 // components
 import Page from '../../../../components/Page';
-
+import ReleaseItemModal from "./modal/ReleaseItemModal";
 import axios from "../../../../auth/fetch"
 import Loader from '../../../../components/Loader/Loader';
 import { getPermissions } from "../../../../utils/getPermissions";
@@ -59,6 +59,7 @@ function Asignacion() {
 
     const [doctors, setdoctors]                         = useState(null);
     const [items, setitems]                             = useState(null);
+    const [totalOrder,setTotalOrder]                    = useState(null);
 
     const [openSaveChanges, setopenSaveChanges]         = useState(false);
     const [sending, setsending]                         = useState(false);
@@ -73,20 +74,26 @@ function Asignacion() {
 
     const [openModalItemReturn, setopenModalItemReturn] = useState(false);
     const [typeReturn, settypeReturn]                   = useState("one");
-    const [selectedItem, setselectedItem]               = useState(null);
-
+    const [selectedItem, setselectedItem]               = useState(null); // <-- Eliminar
+    const [curerntItem, setCurerntItem]               = useState(null); 
 
     const [searchItemsToInventory, setsearchItemsToInventory] = useState(false);
     const [inventoryItems, setinventoryItems]                 = useState(null);
+    const [openModalReleaseItem, setopenModalReleaseItem]   = useState(false);
 
-    const urlGetPersonal            = "/EMplOyeFIle/BYGRoUP/get/?grp=7&grp=6";
-    const urlGetItemFromDoctor      = "/invENtOrY/aSSGNmEnT/byDoCTOR/";
+    const urlGetPersonal            =  "/sales/userWithOrder"; // "/EMplOyeFIle/BYGRoUP/get/?grp=7&grp=6";
+    const urlGetItemFromClient      =  "/sales/all/"; // "/invENtOrY/aSSGNmEnT/byDoCTOR/";
     const urlGetDataInventory       = "/InveTorY/get/ALL";
 
     // Permissions
     const location                              = useLocation();
     let MenuPermissionList                      = useSelector(state => state.dashboard.menu);
-    let permissions                             = getPermissions(location, MenuPermissionList);
+    // let permissions                             = getPermissions(location, MenuPermissionList);
+    const releaseItem = (itemLot) => {
+        // setitemToEdit(data);
+        setCurerntItem(itemLot);
+        setopenModalReleaseItem(true);
+    }
 
     const LoginSchema =         Yup.object().shape({
         name:                   Yup.string().required('Debe ingresar un nombre'),  
@@ -116,13 +123,10 @@ function Asignacion() {
     const getDoctors = () => {
         // Empleados (medico, enfermera)
         axios.get(urlGetPersonal)
-        .then((res) => {
-            console.log(res.data);
-            let dataList = res.data.data;
-
+        .then((res) => {          
+            let dataList = res.data.rows;
             if(dataList.length > 0){
-
-                setdoctors(dataList[0].accountRoles);
+                setdoctors(dataList);
                 setloading(false);
                 
                 // setnurses(dataList[1].accountRoles);
@@ -144,12 +148,10 @@ function Asignacion() {
     });
 
     const getItemsByDoctor = (id) => {
-        axios.get(urlGetItemFromDoctor+id)
+        axios.get(urlGetItemFromClient+id)
         .then((res) => {
-
-            console.log(res.data);
-
-            setitems(res.data.data);
+            setitems(res.data.rows);
+            setTotalOrder({"totalOrder":res.data.totalOrder,"count":res.data.count})
             setsearchData(false);
 
         }).catch((err) => {
@@ -157,8 +159,7 @@ function Asignacion() {
         });
     }
 
-    const changeDoctor = (id) => {
-        console.log("Get items from doctor id:"+ id);
+    const changeDoctor = (id) => {        
         setdoctor(id);
         setsearchData(true);
         getItemsByDoctor(id);
@@ -226,47 +227,80 @@ function Asignacion() {
     }
 
     let columns = [
-        // { field: 'id',          headerName: 'ID', width: 70 },
+        { field: 'id',          headerName: 'ID', width: 70 },
         { 
-            field: 'name',     
-            headerName: `Nombre`,
+            field: 'itemLot.lot.article.name',     
+            headerName: `Especie`,
             maxWidth: 250,
-            minWidth: 200,
+            minWidth: 100,
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 // console.log(data);
                 return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {data.row.article.name}
+                    {data.row["itemLot.lot.article.name"]+" ( "+parseFloat(data.row["itemLot.weight"]).toFixed(2) +" Kg ) #"+data.row.id}
                 </Typography>
             }
         },
         { 
-            field: 'stock',     
-            headerName: `Descripción`,
-            maxWidth: 280,
-            minWidth: 240,
+            field: 'itemLot.lot.article.price',     
+            headerName: `Precio`,
+            maxWidth: 80,
+            minWidth: 80,
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 // console.log(data);
                 return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {data.row.article.description}
+                    {"$"+data.row["itemLot.lot.article.price"]||0.0}
                 </Typography>
             }
         },
         { 
-            field: 'quantity',    
-            headerName: 'Cantidad',
-            sortable: false,
-            maxWidth: 130,
-            minWidth: 120,
+            field: 'qty',     
+            headerName: `Cantidad`,
+            maxWidth: 80,
+            minWidth: 80,
             flex: 1,
-            headerAlign: 'center',
-            align: "center"
+            sortable: false,
+            align:'center',
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                // console.log(data);
+                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                    {data.row["itemLot.lot.article.isSUW"]?"1":data.row.qty + " kg"}
+                </Typography>
+            }
+        },     { 
+            field: 'subTotal',     
+            headerName: `Sub total`,
+            maxWidth: 80,
+            minWidth: 80,
+            flex: 1,
+            sortable: false,
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                // console.log(data);
+                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                    {"$" + data.row.subTotal}
+                </Typography>
+            }
         },
+        {  field: 'subTotal',  
+            width: 80,
+            flex: 1,
+            sortable: false,
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                // console.log(data);
+                return <Button  onClick={() => releaseItem(data.row)} sx={{fontWeight: 'normal', mb:0}} variant="contained">
+                    Liberar
+                </Button>
+            }
+        },         
+        /* ,       
         { 
             field: 'id',    
             headerName: '',
@@ -283,7 +317,7 @@ function Asignacion() {
                         </Button>
                             
             }
-        }
+        } */
     ];
 
     let inventorycolumns = [
@@ -440,7 +474,12 @@ function Asignacion() {
         
         setopenModalItemReturn(true);
     }
-
+    const resetList = () => {
+        changeDoctor(doctor);
+        // setopenModalAddItem(false);
+        setopenModalReleaseItem(false);
+        // setitemToEdit(null);
+    }
     const returnItems = () => {
 
         setsending(true);
@@ -508,13 +547,23 @@ function Asignacion() {
     }
 
     return (
-        <Page title="Roles | RepuestosGo">
+        <Page title="Pedidos | Bosque Marino">
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">
-                    Asignación
+                    Pedidos
                 </Typography>
             </Box>
+            {openModalReleaseItem &&
+                <ReleaseItemModal 
+                    show={openModalReleaseItem}
+                    handleShowModal={(show) => {
+                        setopenModalReleaseItem(false);
+                    }}
+                    item={curerntItem}
+                    reset={() => resetList()}
+                />
+            }
 
             <Modal
                 open={openModalAddItem}
@@ -545,7 +594,7 @@ function Asignacion() {
 
                                     <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
                                         <DataGrid
-                                            sx={{mb:4}}
+                                            sx={{mb:12}}
                                             rows={inventoryItems}
                                             columns={inventorycolumns}
                                             hideFooter
@@ -625,7 +674,7 @@ function Asignacion() {
                         {typeReturn === "one" ? "Devolver asignación" : "Devolver asignaciones"}
                     </Typography>
                     <Typography sx={{mb: 3}} component="p">
-                        ¿Esta seguro de devolver esta{typeReturn === "one" ? " asignación" : "s asignaciones"}?
+                        ¿Esta seguro de anular peido?
                     </Typography>
                     <LoadingButton
                         onClick={() => returnItems()}
@@ -658,10 +707,10 @@ function Asignacion() {
                                         sx={{px : 3}} 
                                         size="normal"
                                     >
-                                        Nueva asignación
+                                        Nuevo pedido
                                     </Button>
                                 </Grid>
-                                <Grid item md={4} xs={12} sx={{mb: 2}}>
+                                {/* <Grid item md={4} xs={12} sx={{mb: 2}}>
                                     {(doctor === null || searchData) 
                                     ?
                                         <Button 
@@ -672,7 +721,7 @@ function Asignacion() {
                                             sx={{px : 3}} 
                                             size="normal"
                                         >
-                                            Descargar hoja asignación
+                                            Descargar pedidos
                                         </Button>
                                     :
                                         <ExcelFile
@@ -685,18 +734,18 @@ function Asignacion() {
                                                     sx={{px : 3}} 
                                                     size="normal"
                                                 >
-                                                    Descargar hoja asignación
+                                                    Descargar pedidos
                                                 </Button>
                                             }
                                         >
                                             <ExcelSheet data={items} name="Asignación">
-                                                <ExcelColumn label="Producto"       value={(col) => col.article.name.toString()} />
-                                                <ExcelColumn label="Descripción"    value={(col) => col.article.description.toString()}/>
+                                                <ExcelColumn label="Producto"       value={(col) => col["itemLot.lot.article.name"].toString()} />
+                                                <ExcelColumn label="Descripción"    value={(col) => col["orderStatus.name"].toString()}/>
                                                 <ExcelColumn label="Cantidad"       value="quantity" />
                                             </ExcelSheet>
                                         </ExcelFile>
                                     }
-                                </Grid>
+                                </Grid> */}
                             </Grid>
 
                             {alertSuccessMessage !== "" &&
@@ -714,20 +763,20 @@ function Asignacion() {
                             <Grid container columnSpacing={3} sx={{mb: 3}}>
                                 <Grid item xs={12}>
                                     <Typography sx={{mb: 1, fontWeight: "bold"}}>
-                                        Seleccione un doctor:
+                                        Seleccione un cliente:
                                     </Typography>
                                     <FormControl fullWidth size="small">
                                         <InputLabel id="doctors">
-                                            Doctor
+                                            Cliente
                                         </InputLabel>
                                         <Select
                                             fullWidth
-                                            labelId="Doctor"
+                                            labelId="Cliente"
                                             id="doctors"
                                             defaultValue=""
                                             value={doctor === null ? "" : doctor}
                                             onChange={(e) => changeDoctor(e.target.value)}
-                                            label="Doctor"
+                                            label="Cliente"
                                             // MenuProps={MenuProps}
                                             // disabled={municipios.length === 0}
 
@@ -738,12 +787,9 @@ function Asignacion() {
                                             {doctors.map((item, key) => {
                                                 let dataItem = item;
                                                 // console.log(dataItem.account.employeeFiles);
-                                                return <MenuItem key={key} value={dataItem.account.accountId.toString()}>
-                                                            {dataItem.account.employeeFiles.length > 0
-                                                                ?
-                                                                dataItem.account.employeeFiles[0].fisrtName+ " " +dataItem.account.employeeFiles[0].lastName
-                                                                :
-                                                                dataItem.account.name
+                                                return <MenuItem key={key} value={dataItem.id.toString()}>
+                                                            {dataItem.id +" - "+ dataItem.phone +" - "+ 
+                                                                dataItem.people.document.firstName  + " " +dataItem.people.document.lastName 
                                                             }
                                                         </MenuItem>
                                             })}
@@ -761,21 +807,71 @@ function Asignacion() {
                                     {(items !== null && items.length > 0 && doctor !== null) 
                                         ?
                                             <div>
-                                                <Box sx={{textAlign: "right", mb: 3}}>
-                                                    <Button onClick={() => startToReturnItem(null)} type="button" size="small" sx={{py: 1, px: 5}} color="primary" variant="contained">
-                                                        Devolver Todo
-                                                    </Button>
-                                                </Box>
-
+                                                <Grid container columnSpacing={3} justifyContent="space-around">
+                                                    <Grid md="auto" item xs={12} sx={{mb: 2}}>
+                                                        <Box >
+                                                        <Typography  sx={{
+                                                                        fontWeight: 'bold', 
+                                                                        mb:0, 
+                                                                        
+                                                                    }} 
+                                                                    fullWidth 
+                                                                    variant="body"color="primary" >
+                                                            Total pedido: $ 
+                                                            </Typography>
+                                                            <Typography  sx={{
+                                                                        fontWeight: 'bold', 
+                                                                        mb:0, 
+                                                                        
+                                                                    }} 
+                                                                    fullWidth 
+                                                                    variant="body"color="primary" >
+                                                            {" "+totalOrder.totalOrder}
+                                                            </Typography>
+                                                        </Box>  
+                                                    </Grid> 
+                                                    <Divider orientation="vertical" flexItem /> 
+                                                    <Grid md="auto" item xs={12} sx={{mb: 2}}>
+                                                    
+                                                        <Box>
+                                                            <Typography   sx={{
+                                                                        fontWeight: 'bold', 
+                                                                        mb:0, 
+                                                                        
+                                                                    }} 
+                                                                    fullWidth 
+                                                                    variant="body"color="primary" >
+                                                                Cant. Items: 
+                                                            </Typography>
+                                                            <Typography  sx={{
+                                                                        fontWeight: 'bold', 
+                                                                        mb:0, 
+                                                                        
+                                                                    }} 
+                                                                    fullWidth 
+                                                                    variant="body"color="primary" >
+                                                            {" "+totalOrder.count}
+                                                            </Typography>
+                                                            
+                                                        </Box>
+                                                    </Grid>    
+                                                    <Divider orientation="vertical" flexItem />                                                 
+                                                    <Grid md="auto" item xs={12} sx={{mb: 2}}>   <Box>
+                                                        <Button   onClick={() => changeDoctor(doctor)}  /* onClick={() => startToReturnItem(null)} */ type="button" size="small" sx={{py: 1, px: 5}} color="primary" variant="contained">
+                                                                Actualizar
+                                                            </Button>
+                                                        </Box>
+                                                    </Grid>
+                                                </Grid>
                                                 <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
                                                     <DataGrid
-                                                        sx={{mb:4}}
+                                                        sx={{mb:8}}
                                                         rows={items}
                                                         columns={columns}
 
                                                         page={0}
-                                                        pageSize={6}
-                                                        rowsPerPageOptions={[6,10,20]}
+                                                        pageSize={10}
+                                                        rowsPerPageOptions={[10,20,30]}
                                                         // autoPageSize
                                                         rowCount={items.length}
 
@@ -787,12 +883,29 @@ function Asignacion() {
                                                         // checkboxSelection
                                                     />
                                                 </div>
+                                                <LoadingButton
+                                                fullWidth
+                                                size="large"
+                                                type="submit"
+                                                variant="contained"
+                                                loading={sending}
+                                                color="primary"
+                                                form="form1"
+                                            /* disabled={
+                                                    (!permissions.crea && typeForm === "create") || 
+                                                    (!permissions.edita && typeForm === "edit")  || 
+                                                    (values.name === "" || values.description === "")
+                                                } */
+                                            >
+                                                {"Confirmar pago - $" +  totalOrder.totalOrder}
+
+                                            </LoadingButton>
                                             </div>
                                         :
                                             <div>
                                                 {doctor !== null &&
                                                     <Alert severity="info">
-                                                        No se han encontrado productos asignados para este doctor.
+                                                        No se han encontrado productos reservador para este cliente.
                                                     </Alert>
                                                 }
                                             </div>
