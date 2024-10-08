@@ -1,30 +1,15 @@
 import React, {useEffect, useState} from 'react'
 
-import { 
-    Box, 
-    Grid, 
-    Stack, 
-    ButtonGroup, 
-    Tooltip, 
-    Container, 
-    Typography, 
-    Alert,  
+import {     
+    Grid,    
+    Typography,       
     Card, 
-    CardContent, 
-    Hidden, 
-    Button, 
     Modal, 
-    TextField, 
-    Checkbox, 
+    TextField,     
     Select, 
-    MenuItem, 
-    InputLabel, 
-   
-    FormControl,
-    Switch,
-    FormControlLabel
+    MenuItem,     
+    FormControl    
 } from '@mui/material';
-
 
 import { LoadingButton } from '@mui/lab';
 import { alpha, styled } from '@mui/material/styles';
@@ -55,7 +40,27 @@ const RootStyle = styled(Card)(({ theme }) => ({
     maxWidth: "600px",
     backgroundColor: "#fff",
 }));
-
+const CloseModal = styled('div')(({ theme }) => ({
+    position:'absolute',
+    top:'20px',
+    right:'20px',
+    width:'30px',
+    height:'30px',
+    border:'none',
+    background:'none',
+    cursor:'pointer',
+    transition: '.3s ease all',
+    borderRadius:'5px',
+    color:'#1766DC',
+    hover:{
+     background:'#F2F2F2'
+    },
+    svg:{
+         width:'100%',
+         height:'100%'
+    }
+ 
+ }));
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 
@@ -67,7 +72,7 @@ const MenuProps = {
       },
     },
 };
-
+let xItem={};    
 function AddLotModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
@@ -75,10 +80,9 @@ function AddLotModal({
     permissions = null,
     article = null,
     articleId=null,
-    currentItem=null
-    
+    currentItem=null 
 
-}) {   
+}) {  
     
     const urlLots                                    = "/inVenTory/LotS/ITEMS";
     const [typeForm, settypeForm]                       = useState("create");
@@ -87,8 +91,8 @@ function AddLotModal({
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
     const [alertErrorMessage,   setalertErrorMessage]   = useState("");    
     const [sending, setsending] = useState(false);
-    const [currentNumItem,setCurrentNumItem]            =useState("");
-    
+    const [currentNumItem,setCurrentNumItem]            =useState(currentItem.numItem);
+   
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
         description:        Yup.string().required('Debe ingresar una descripción'),        
@@ -96,14 +100,15 @@ function AddLotModal({
      
   
     const formik = useFormik({
-        validateOnChange: false,
+        validateOnChange: true,
         initialValues: {
             id:     "",
             lotId:  "",
             items:  [{        
                         weight:"",
                         conditionId:"",
-                        note:""
+                        note:"",
+                        numItem:""
                     }]
             
         },
@@ -113,10 +118,12 @@ function AddLotModal({
             let data = { 
                 id:         currentItem.id,      
                 lotId:      currentItem.lotId, 
+                articleId,
                 items:      [{        
                                 weight:values.weight?values.weight:currentItem.weight,
                                 conditionId:values.conditionId?values.conditionId:currentItem.conditionId,
-                                note:values.note?values.note:currentItem.note
+                                note:values.note?values.note:currentItem.note,
+                                numItem:values.numItem?values.numItem:currentItem.numItem
                             }]
             }
                     
@@ -128,16 +135,15 @@ function AddLotModal({
                 data
             }).then((res) => {
                 setsending(false);
+                numItem();
                 if(res.data.result){                        
                     if(reset){
-                        toast.success(res.data.message);
-                        numItem();
+                        toast.success(res.data.message);                        
                         resetForm();
-                        reset();
+                        reset();                        
                     }
                 }else{
                     toast.warning(res.data.message);
-                    
                 }
 
             }).catch((err) => {
@@ -149,31 +155,25 @@ function AddLotModal({
             
         }
     });
-    let ni=0
+    
     const numItem =  async ()  => {       
         const url = '/Inventory/currentNumItem/'+articleId;
          axios.get(url).then((res) => {           
             if(res.result){
-                
-                ni=res.data;
-                // setCurrentNumItem(res.data); 
-                console.log("Next")
-                console.log(currentNumItem)                           
-                console.log(res.data) 
-                return  res.data     
+                setCurrentNumItem(res.data.nextItem);  
             }
         }).catch((err) => {
             console.error(err);
         });
     } 
-    const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
-    console.log("ni") 
-    console.log( currentNumItem) 
-    useEffect( async () => {  
-        if(search){              
-            await  numItem() 
-        };
-    }, []);
+    const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;    
+    useEffect( () => {
+        if(currentItem.id===0){                    
+            numItem();
+        } 
+    },
+    [currentItem]
+    ); 
     return (
         
         <Modal
@@ -191,6 +191,11 @@ function AddLotModal({
 
                 <FormikProvider value={formik}>
                     <Form autoComplete="off" noValidate onSubmit={handleSubmit } id="form1">
+                        <CloseModal onClick={() => handleShowModal(false)}> 
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                            </svg>
+                        </CloseModal>
                         <Typography id="modal-modal-title" variant="h5" component="h5">
                             {currentItem.name + " - lote # "+ currentItem.lotId}
                         </Typography>
@@ -205,17 +210,22 @@ function AddLotModal({
                                 <Grid container columnSpacing={4}> 
                                 <Grid item md={3}>
                                         {/* Fecha recibido */}
-                                        <FormControl fullWidth size="small" sx={{mb: 2}}>
+                                        <FormControl fullWidth size="90" sx={{mb: 2}}>
                                             <TextField
                                                 InputLabelProps={{
                                                     shrink: true,
                                                 }}
                                                 label="Num."
-                                                type="number"                                                
+                                                type="number"                                               
                                                 required
                                                 fullWidth 
-                                                defaultValue={currentNumItem}                                                                                                  
-                                                onChange={(e) => formik.setFieldValue('weight', e.target.value)}                                            
+                                                name="numItem"
+                                                id="numItem"
+                                                value={currentNumItem}
+                                                // defaultValue={currentItem.numItem||currentNumItem.nextItem} 
+                                                // defaultValue={currentItem.numItem!==''?currentItem.numItem:currentNumItem.nextItem}                                                  
+                                                // onChange={(e) => formik.setFieldValue('numItem', e.target.value)}                                            
+                                                onChange={(e)=>setCurrentNumItem(e.target.value)}
                                                 placeholder="Num"
                                             /> 
                                         </FormControl>    
@@ -242,7 +252,7 @@ function AddLotModal({
                                     <Grid item md={5}>
                                         {/* existencia */}
                                         <FormControl fullWidth  sx={{mb: 2}}>
-                                        <Select defaultValue={currentItem.conditionId}
+                                        <Select defaultValue={currentItem.conditionId||1}
                                         
                                          onChange={(e) => formik.setFieldValue('conditionId', e.target.value)} 
                                         >

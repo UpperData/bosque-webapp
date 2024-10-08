@@ -18,7 +18,7 @@ import Permissions from './content/usuarios-y-permisos/Permissions';
 import CreateAccount from './content/usuarios-y-permisos/CreateAccount';
 import FichaPersonal from './content/rrhh/FichaPersonal';
 import InformeMedico from './content/citas/InformeMedico';
-import Asignacion from './content/inventario/Asignacion';
+import Asignacion from './content/sales/Asignacion';
 import Inventario from './content/inventario/Inventario';
 import AdministrarCita from './content/citas/Administrar';
 import TokenExpired from '../shared/TokenExpired';
@@ -151,12 +151,15 @@ function Dashboard() {
                 {/* inventario */}
                 <Route path="InvenTorY/ADMIN"               element={<PrivateRoute><Inventario /></PrivateRoute>}/>
                 <Route path="InvenTorY/view"               element={<PrivateRoute><Catalog /></PrivateRoute>}/>
-                <Route path="InVeNTorY/assigment"               element={<PrivateRoute><Asignacion /></PrivateRoute>}/>
+               
                 {/* <Route path="InvenTory/ADMIN"                   element={<PrivateRoute><Administracion /></PrivateRoute>}/> */}
 
                 {/* finanzas */}
                 <Route path="finace/vouCHer/"                   element={<PrivateRoute><Bills /></PrivateRoute>}/>
                 <Route path="FinaNces/ChangeType"               element={<PrivateRoute><CurrencyExchange /></PrivateRoute>}/>
+                
+                {/* Ventas */}
+                <Route path="InVeNTorY/assigment"               element={<PrivateRoute><Asignacion /></PrivateRoute>}/>
 
                 {/* Tiendas */}
                 <Route path='StoRE/ContraCts'                   element={<PrivateRoute><Contracts /></PrivateRoute>} />

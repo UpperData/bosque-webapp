@@ -1,27 +1,17 @@
 import React, {useEffect, useState} from 'react'
 
-import { 
-    Box, 
+import {     
     Grid, 
-    Stack, 
-    ButtonGroup, 
-    Tooltip, 
-    Container, 
-    Typography, 
-    Alert,  
+    Stack,
+    Typography,       
     Card, 
-    CardContent, 
-    Hidden, 
-    Button, 
     Modal, 
     TextField, 
-    Checkbox, 
-    Select, 
-    MenuItem, 
-    InputLabel, 
+   Radio,
     FormControl,
     Switch,
     FormControlLabel,
+    RadioGroup,
     
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
@@ -110,10 +100,11 @@ function AddArticleModal({
     const [alertErrorMessage,   setalertErrorMessage]   = useState("");
   
     const handleChangeStatus = (event) => {    
-        setIsActived(event.target.checked);
+        setIsActived(event.target.value);
       }; 
     const handleChangeSUW  =(event) => {
-        setIsSUW(event.target.checked);
+        
+        setIsSUW(event.target.value);
       };  
     const [sending, setsending]                         = useState(false);
 
@@ -149,9 +140,7 @@ function AddArticleModal({
                     price:        !values.price?edit.price:values.price,
                     isActived,
                     isSUW
-                }
-                console.log('---- values -----')
-                console.log(data) 
+                }                
                 setsending(true);
                 axios({
                     method: typeForm === "create" ? "POST" : "PUT",
@@ -164,6 +153,7 @@ function AddArticleModal({
                             toast.success(res.data.message);
                             resetForm();
                             reset();
+                            handleShowModal(false);
                         }
                     }else{
                         toast.success(res.data.message);
@@ -289,24 +279,23 @@ function AddArticleModal({
                                 label={isActived ? "Activo" : "Inactivo"}
                             />  
                         </Grid>
-                        <Grid item md={4}>
+                        <Grid item md={6}>
                             {/* Tipo de venta del producto */}
-                            
-                            <FormControlLabel
-                                width="200"
-                                control={
-                                <Switch
+                            <RadioGroup
+                                    row                                
+                                    aria-labelledby="demo-controlled-radio-buttons-group"
+                                    name="controlled-radio-buttons-group"
+                                    // value={value}
                                     onChange={handleChangeSUW}
-                                    name="isSUW"
-                                    color="primary"                                     
-                                    defaultChecked={edit?edit.isSUW:true}                                                
-                                />
-                                }                                            
-                                 label={isSUW ? "Peso unitario" : "Granel"}
-                                // label={`Switch is ${isSUW? 'ON':'OFF'}`}
-                            />  
+                                    defaultValue={edit?edit.isSUW:true} 
+                                    
+                                >
+                                    <FormControlLabel value="false" control={<Radio />} color = "secondary" label="Granel" />
+                                    <FormControlLabel value="true" control={<Radio /> } label="Unidad" />
+                            </RadioGroup>
+                                
                         </Grid>
-                        <Grid item md={4}>
+                        <Grid item md={2}>
                             {/* Tipo de venta del producto */}
                             
                             <Typography 

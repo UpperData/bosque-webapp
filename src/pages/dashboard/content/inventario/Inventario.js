@@ -35,7 +35,7 @@ const ExcelJS = require("exceljs");
 const ExcelFile     = ExportExcel.ExcelFile;
 const ExcelSheet    = ExportExcel.ExcelSheet;
 const ExcelColumn   = ExportExcel.ExcelColumn;
-
+let currentStock=[]
 // ----------------------------------------------------------------------
 
 function Inventario() {
@@ -73,7 +73,7 @@ function Inventario() {
     const location                              = useLocation();
     let MenuPermissionList                      = useSelector(state => state.dashboard.menu);
     let permissions                             = getPermissions(location, MenuPermissionList);
-
+    
     const getList = async () => {
 
         setsearch(true);
@@ -142,7 +142,7 @@ function Inventario() {
             maxWidth: 50,
             minWidth: 50,
             flex: 1,
-            sortable: false,
+            sortable: true,
             headerAlign: 'center',
             renderCell: (cellValues) => {
                 let data = cellValues;                
@@ -167,7 +167,8 @@ function Inventario() {
             maxWidth: 250,
             minWidth: 200,
             flex: 1,
-            sortable: true,
+            sortable: false,
+            filterable: false,
             headerAlign: 'center',
             renderCell: (cellValues) => {
                 let data = cellValues;                
@@ -200,8 +201,9 @@ function Inventario() {
                             }} 
                             fullWidth 
                             variant="body"
-                            onClick={() => editItem
-                                (data.row)} 
+                            onClick={() => openModal(data.row)}
+                            /* onClick={() => editItem
+                                (data.row)}  */
                         >
                             {data.row.name.toUpperCase()} &nbsp; <i className="mdi mdi-pencil" />
                         </Typography>
@@ -236,7 +238,7 @@ function Inventario() {
             field: 'price',    
             headerName: 'Precio Kg',
             sortable: true,
-            maxWidth: 150,
+            maxWidth: 100,
             minWidth: 100,
             flex: 1,
             headerAlign: 'center',
@@ -252,33 +254,12 @@ function Inventario() {
                             </Typography>
                         </Tooltip>
             }
-        }, /* ,
-        { 
-            field: 'minStock',    
-            headerName: 'Mínimo',
-            sortable: false,
-            maxWidth: 90,
-            minWidth: 90,
-            flex: 1,
-            headerAlign: 'center',
-            editable: true,
-            type: 'number',
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                let minStock = data.row.minStock;
-                
-                return <Typography>
-                    {minStock}
-                </Typography>
-            }
-
-             */ 
-        
+        },         
         { 
             editable: false,
             field: 'almacen',     
             headerName: 'Disponible',
-            maxWidth: 130,
+            maxWidth: 100,
             minWidth: 100,
             flex: 1,
             sortable: true,
@@ -301,14 +282,25 @@ function Inventario() {
             headerAlign: 'center'
         },
         {
-            headerName: `Descarga`, 
+            headerName: ``, 
             headerAlign: 'center',  
             align: 'center',  
-            maxWidth: 160,
-            minWidth: 160,   
-            renderCell: (params) => (              
-                <div>
-                    <ToggleButtonGroup>
+            maxWidth: 90,
+            minWidth: 90,
+            sortable:false,
+            filterable: false,  
+            renderCell: (cellValues) => {              
+                let data = cellValues
+                return <div>
+                    {
+                        <Button
+                        variant="contained"                        
+                        color="primary" 
+                        onClick={() =>saveExcel(data.row.id)}
+                        >
+                            XLS
+                        </Button>
+                    /* <ToggleButtonGroup>
                         <Button
                         variant="contained"                        
                         color="primary" 
@@ -323,21 +315,22 @@ function Inventario() {
                         >
                             PDF
                         </Button>
-                    </ToggleButtonGroup>   
+                    </ToggleButtonGroup>  */}  
                 </div>
-            )
+            }
             
             
         },
         { 
             field: 'isPublished',    
-            headerName: 'Acción',
+            headerName: '',
             sortable: true,
             maxWidth: 120,
             minWidth: 120,
             align: 'center',
             flex: 1,
             headerAlign: 'center',
+            filterable: false,
             renderCell: (cellValues) => {
                 let isPublished = cellValues.row.isPublished;
 
@@ -350,7 +343,28 @@ function Inventario() {
                     {isPublished ? 'Ocultar' : 'Publicar'}
                 </Button>
             }
-        },
+        },{ 
+            field: 'lotes',    
+            headerName: '',            
+            maxWidth: 120,
+            minWidth: 120,
+            align: 'center',
+            flex: 1,
+            sorteable:false,
+            filterable: false,
+            headerAlign: 'center',
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                return <Button                    
+                    variant="contained"
+                    color="primary" 
+                    onClick={() => editItem
+                        (data.row)} 
+                >
+                    Lotes
+                </Button>
+            }
+        }
         
     ];
     
@@ -446,31 +460,33 @@ function Inventario() {
       ];
  
 
-
+      
     const getStockArticle= async (art)=>{                
         const url = "/INVETORY/get/Article/"+art;
+        let rs=[];
         await axios.get(url).then((res) => {        
              if(res.result){                 
-                setStockdata(res.data);               
-                
+                setStockdata(res.data);
+                rs=res.data;
              }else{
-                setStockdata([]);                 
-             }             
-                 
+                setStockdata([]);
+                rs=[];
+             }
          }).catch((err) => {
-             console.error(err);
+             console.error(err);             
          }); 
-         
+         return rs;         
     }
     
-    const workSheetName = 'hoja-1';    
-    const workbook = new Excel.Workbook(); 
+    const workSheetName = 'BM';    
+    const workbook = new Excel.Workbook();     
     const saveExcel = async (artId) => {
+
          try {           
-            getStockArticle(artId); 
-            if(stockdata && stockdata.length>0){
+            let currStock= await getStockArticle(artId)                        
+            if(currStock && currStock.length>0){
                 
-                const fileName = stockdata.length>0?stockdata[0].name +"-"+ moment().format('YYY-MM-DD') : 'stock' ;                
+                const fileName = currStock.length>0?currStock[0].name +"-"+ moment().format('YYY-MM-DD') : 'stock' ;                
                 // creating one worksheet in workbook
                 const worksheet = workbook.addWorksheet(workSheetName);
         
@@ -486,11 +502,16 @@ function Inventario() {
                 column.width = column.header.length + 5;
                 column.alignment = { horizontal: 'left' };
                 });
-        
+                worksheet.addRow(2).values = ['#', 'Especie', 'Peso Kg', 'Precio (Aprox.)', 'Nota', 'Código']
+                worksheet.getCell(`A1`).value = "Stock de "+currStock[0].name +" ( "+currStock.length+" )"; // Assign title to cell A1 -- THIS IS WHAT YOU'RE LOOKING FOR.
+                worksheet.mergeCells('A1:F1'); // Extend cell over all column headers
+                worksheet.getCell(`A1`).alignment = { horizontal: 'center' }; // Horizontally center your text
                 // loop through data and add each one to worksheet
-                stockdata.forEach(singleData => {
+                currStock.forEach(singleData => {
                 worksheet.addRow(singleData);
                 });
+                worksheet.getRow(1).font = { bold: true,size:20 };
+                worksheet.getRow(2).font = { bold: true };
         
                 // loop through all of the rows and set the outline style.
                 worksheet.eachRow({ includeEmpty: false }, row => {

@@ -53,7 +53,27 @@ const RootStyle = styled(Card)(({ theme }) => ({
     maxWidth: "800px",
     backgroundColor: "#fff",
 }));
-
+const CloseModal = styled('div')(({ theme }) => ({
+    position:'absolute',
+    top:'20px',
+    right:'20px',
+    width:'30px',
+    height:'30px',
+    border:'none',
+    background:'none',
+    cursor:'pointer',
+    transition: '.3s ease all',
+    borderRadius:'5px',
+    color:'#1766DC',
+    hover:{
+     background:'#F2F2F2'
+    },
+    svg:{
+         width:'100%',
+         height:'100%'
+    }
+ 
+ }));
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 
@@ -99,8 +119,8 @@ function AddLotModal({
         initialValues: {
             lotId:        currentLot.id,
             articleId:    currentLot.articleId>0 ? currentLot.articleId:"",
-            receivedDate: currentLot.receivedDate ? currentLot.receivedDate:moment().format('YYYY-MM-DD'),
-            expDate:      currentLot.expDate ? currentLot.expDate:moment().format('YYYY-MM-DD'),
+            receivedDate: currentLot.receivedDate ? currentLot.receivedDate:moment().format('YYYY-MM-DD h:mm:ss'),
+            expDate:      currentLot.expDate ? currentLot.expDate:moment().format('YYYY-MM-DD h:mm:ss'),
             note:         currentLot.note ? currentLot.note:"",
             isActived:    currentLot.isActived ? currentLot.isActived:""
         },
@@ -110,8 +130,8 @@ function AddLotModal({
             let data = {
                 lotId:      currentLot.id,  
                 articleId:    article.id,
-                receivedDate: !values.receivedDate?currentLot.receivedDate:moment(values.receivedDate).format('YYYY-MM-DD'),
-                expDate:      !values.expDate?currentLot.expDate:moment(values.expDate).format('YYYY-MM-DD'),
+                receivedDate: !values.receivedDate?currentLot.receivedDate:moment(values.receivedDate).format('YYYY-MM-DD h:mm:ss'),
+                expDate:      !values.expDate?currentLot.expDate:moment(values.expDate).format('YYYY-MM-DD h:mm:ss'),
                 note:         values.note,
                 isActived,
                 items: []
@@ -128,10 +148,10 @@ function AddLotModal({
                         toast.success(res.data.message);
                         resetForm();
                         reset();
+                        handleShowModal(false);
                     }
                 }else{
-                    toast.warning(res.data.message);
-                    
+                    toast.warning(res.data.message);                    
                 }
 
             }).catch((err) => {
@@ -167,6 +187,11 @@ function AddLotModal({
 
                 <FormikProvider value={formik}>
                     <Form autoComplete="off" noValidate onSubmit={handleSubmit } id="form1">
+                        <CloseModal onClick={() => handleShowModal(false)}> 
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                            </svg>
+                        </CloseModal>
                         <Typography id="modal-modal-title" variant="h5" component="h5">
                             {article.name}
                         </Typography>

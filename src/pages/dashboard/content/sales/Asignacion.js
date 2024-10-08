@@ -21,6 +21,7 @@ import ExportExcel from "react-export-excel"
 import { Icon } from '@iconify/react';
 import CaretRight from "@iconify/icons-ant-design/caret-right"
 import CaretLeft from "@iconify/icons-ant-design/caret-left"
+import { BorderAll } from "@material-ui/icons";
 
 const ExcelFile     = ExportExcel.ExcelFile;
 const ExcelSheet    = ExportExcel.ExcelSheet;
@@ -228,6 +229,7 @@ function Asignacion() {
 
     let columns = [
         { field: 'id',          headerName: 'ID', width: 70 },
+        { field: 'numItem',          headerName: '#', width: 70 },
         { 
             field: 'itemLot.lot.article.name',     
             headerName: `Especie`,
@@ -259,21 +261,33 @@ function Asignacion() {
             }
         },
         { 
-            field: 'qty',     
-            headerName: `Cantidad`,
-            maxWidth: 80,
-            minWidth: 80,
+            field: 'weigth',     
+            headerName: `Peso kg`,
+            maxWidth: 100,
+            minWidth: 100,
             flex: 1,
             sortable: false,
             align:'center',
+            BorderAll:4,
             renderCell: (cellValues) => {
                 let data = cellValues;
                 // console.log(data);
-                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {data.row["itemLot.lot.article.isSUW"]?"1":data.row.qty + " kg"}
-                </Typography>
+                return <TextField id="weigth" type="number"autoFocus margin="dense" variant="outlined"  size="5"/>;
             }
-        },     { 
+        },{ 
+            field: 'discount',     
+            headerName: `Descuento`,
+            maxWidth: 100,
+            minWidth: 100,
+            flex: 1,
+            sortable: false,
+            align:'center',
+            BorderAll:4,
+            renderCell: (cellValues) => {
+                let data = cellValues;                
+                return <TextField id="discount" type="number"autoFocus margin="dense" variant="outlined"  size="5" defaultValue={0.00}/>;
+            }
+        },{ 
             field: 'subTotal',     
             headerName: `Sub total`,
             maxWidth: 80,
@@ -288,7 +302,7 @@ function Asignacion() {
                 </Typography>
             }
         },
-        {  field: 'subTotal',  
+        {  field: 'release',  
             width: 80,
             flex: 1,
             sortable: false,

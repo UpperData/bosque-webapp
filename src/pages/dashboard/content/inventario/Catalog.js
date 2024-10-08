@@ -1,13 +1,12 @@
 import {useState, useEffect} from "react"
-import { useFormik, Form, FormikProvider } from 'formik';
 import { Link, useLocation } from 'react-router-dom';
 import Excel from 'exceljs';
 import { saveAs } from 'file-saver';
-import moment, { updateLocale } from "moment";
+import moment from "moment";
 
 // material
 import { Box, Grid, Stack, ToggleButtonGroup,ButtonGroup, Tooltip, Container, Typography, Alert,  Card, CardContent, Hidden, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import { DataGrid, DataGridProps } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
 
 
 // components
@@ -17,18 +16,8 @@ import Loader from '../../../../components/Loader/Loader';
 import { getPermissions } from "../../../../utils/getPermissions";
 import { useSelector } from "react-redux";
 import { toast } from 'react-toastify';
-import ExportExcel from "react-export-excel"
-import AddArticleModal from "./modal/AddArticleModal";
-import ChangePublishedStatusModal from "./modal/ChangePublishedStatusModal";
-import LotesArticleModal from "./modal/LotesArticleModalFull";
-import { parseJSON } from "date-fns";
-import { da } from "date-fns/locale";
+import ListStockModal from "./modal/ListStockModal";
 
-const ExcelJS = require("exceljs");
-
-const ExcelFile     = ExportExcel.ExcelFile;
-const ExcelSheet    = ExportExcel.ExcelSheet;
-const ExcelColumn   = ExportExcel.ExcelColumn;
 
 // ----------------------------------------------------------------------
 
@@ -48,7 +37,7 @@ function Catalog() {
     const [sending, setsending]                         = useState(false);
 
     const [openModalArticle,setOpenModalArticle] =useState(false);
-    const [openModalAddItem, setopenModalAddItem]           = useState(false);
+    const [openListStockModal, setOpenListStockModal]           = useState(false);
     const [openModalPublishItem, setopenModalPublishItem]   = useState(false);
 
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
@@ -78,22 +67,7 @@ function Catalog() {
                 setlist(res.data);
                 setsending(false);
                 setloading(false);
-                /* let dta=res.data;
-                let qty="";
-                for (let index = 0; index < dta.length; index++) {                
-                    for (let kindex = 0; kindex < dta.length; kindex++) {
-                        
-                        dta[index].stock= dta[index].lots[kindex].itemLots.length
-                       // qty=dta[index].lots[kindex].itemLots.length;
-                    }
-                    // dta[index]['stock']=qty;
-                } */
-               console.log("ls")
-                console.log(res.data) 
-            }               
-             
-            
-                       
+            }        
         }).catch((err) => {
 
             let error = err.response;
@@ -102,9 +76,7 @@ function Catalog() {
                     setloading(true);
                 }
             }
-            
         });
-        
     }
 
     useEffect(async () => {
@@ -114,11 +86,19 @@ function Catalog() {
             }
         }
     }, []);
+    useEffect(() => { // actualiza cada minuto
+       
+        const interval = setInterval( async () => {            
+            await getList();            
+        }, 10000);
+      
+        return () => clearInterval(interval);
+      }, []);
 
     const editItem = (data) => {
         settypeForm("edit");
         setitemToEdit(data);
-        setopenModalAddItem(true);
+        setOpenListStockModal(true);
     }
     const editPublishedItem = (data) => {
         setitemToEdit(data);
@@ -134,11 +114,7 @@ function Catalog() {
             setitemToEdit({});        
             settypeForm("create");
         }
-        
-        
-        
-        // setopenModalAddItem(true);
-        setOpenModalArticle(true);
+        setOpenListStockModal(true);
     }
     
     let columns = [
@@ -254,7 +230,7 @@ function Catalog() {
             renderCell: (params) => (              
                 <div>
                     <Button 
-                    onClick={() => openModal({id:0})} 
+                    onClick={() => openModal(params.row)} 
                     variant="contained" 
                     color="primary" 
                     fullWidth sx={{px : 3}} 
@@ -266,30 +242,23 @@ function Catalog() {
             )
         },
         {
-              
+            field:"des",
             headerName: `Descarga`, 
             headerAlign: 'center',
+            align:'center',
             sortable: false,    
             maxWidth: 160,
-            minWidth: 160,   
+            minWidth: 160,               
             renderCell: (params) => (              
                 <div>
-                    <ToggleButtonGroup>
-                        <Button
-                        variant="contained"                        
-                        color="primary" 
-                        onClick={() =>saveExcel(params.row.id)}
-                        >
-                            XLS
-                        </Button>
-                        <Button
-                        variant="contained" 
-                        color="primary" 
-                        onClick={() =>saveExcel(params.row.id)}
-                        >
-                            PDF
-                        </Button>
-                    </ToggleButtonGroup>   
+                   
+                    <Button
+                    variant="contained"                        
+                    color="primary" 
+                    onClick={() =>saveExcel(params.row)}
+                    >
+                        XLS
+                    </Button>                         
                 </div>
             )
             
@@ -326,7 +295,7 @@ function Catalog() {
 
             if(res.data.result){
                 // resetForm();
-                // setopenModalAddItem(false);
+                // setopenListStockModal(false);
             }
 
         }).catch((err) => {
@@ -355,50 +324,51 @@ function Catalog() {
 
     const resetList = () => {
         getList();
-        setopenModalAddItem(false);
+        setOpenListStockModal(false);
         setopenModalPublishItem(false);
         setitemToEdit(null);
     }
-
-    // let  items = list !== null ? list.filter(item => item.hasOwnProperty("id")) : [];
-
-
-
     const columnsXLS = [
-        { header: '#', key: 'numOrder' },
+        { header: '#', key: 'numItem' },
         { header: 'Especie', key: 'name' },
-        { header: 'Peso Kg', key: 'lots.itemLots.weight' },
-        { header: 'Precio $ ', key:'weightPrice'},
-        { header: 'note', key: 'lots.itemLots.note' },
-        { header: 'code', key: 'lots.itemLots.id' }
-      ];
- 
-
-
-    const getStockArticle= async (art)=>{                
-        const url = "/INVETORY/get/Article/"+art;
-        await axios.get(url).then((res) => {        
-             if(res.result){                 
-                setStockdata(res.data);               
-                
-             }else{
-                setStockdata([]);                 
-             }             
-                 
-         }).catch((err) => {
-             console.error(err);
-         }); 
-         
-    }
-    
-    const workSheetName = 'hoja-1';    
+        { header: 'Peso Kg', key: 'weight' },
+        { header: 'Precio $ ', key:'price'},
+        { header: 'note', key: 'note' },
+        { header: 'Momento', key: 'dateFile' }, 
+        { header: 'code', key: 'id' }
+      ]; 
+    const workSheetName = 'BM';    
     const workbook = new Excel.Workbook(); 
-    const saveExcel = async (artId) => {
+    const saveExcel = async (rowStock) => {
          try {           
-            getStockArticle(artId); 
-            if(stockdata && stockdata.length>0){
+            // getStockArticle(artId);                 
+            let stockdata=[];
+            stockdata=list.filter(stock =>stock.id===rowStock.id); 
+            let formatedStockdata=[];
+            for (let index = 0; index < stockdata.length; index++) {
+                if(stockdata[index].isActived){ // discrimina lotes activos
+                    for (let jindex = 0; jindex < stockdata[index].lots.length; jindex++) {                         
+                        for (let kindex = 0; kindex < stockdata[index].lots[jindex].itemLots.length; kindex++) {                                                                         
+                            if(stockdata[index].lots[jindex].itemLots[kindex].conditionId===1){ // discrimina Items disponible
+                                //                formatedDataStock.push(dataStock[index].itemLots[kindex])
+                                formatedStockdata.push({
+                                    name:stockdata[index].name,
+                                    price:stockdata[index].price,
+                                    isActived:stockdata[index].isActived,
+                                    dateFile:moment().format('l') +":"+moment().format('LT') , // momento de dato
+                                    weight:stockdata[index].lots[jindex].itemLots[kindex].weight,
+                                    note:stockdata[index].lots[jindex].itemLots[kindex].note,
+                                    numItem:stockdata[index].lots[jindex].itemLots[kindex].numItem,
+                                    id:stockdata[index].lots[jindex].itemLots[kindex].id
+                                })
+                            }
+                        }
+                    }
+                }                
+            }
+            if(formatedStockdata && formatedStockdata.length>0){
                 
-                const fileName = stockdata.length>0?stockdata[0].name +"-"+ moment().format('YYY-MM-DD') : 'stock' ;                
+                const fileName = formatedStockdata.length>0?formatedStockdata[0].name +"-"+ moment().format('YYY-MM-DD') : 'stock' ;                
                 // creating one worksheet in workbook
                 const worksheet = workbook.addWorksheet(workSheetName);
         
@@ -408,18 +378,28 @@ function Catalog() {
         
                 // updated the font for first row.
                 worksheet.getRow(1).font = { bold: true };
+                
         
                 // loop through all of the columns and set the alignment with width.
                 worksheet.columns.forEach(column => {
                 column.width = column.header.length + 5;
                 column.alignment = { horizontal: 'left' };
-                });
-        
-                // loop through data and add each one to worksheet
-                stockdata.forEach(singleData => {
+                });                
+                worksheet.getColumn('F').width= 25;
+                worksheet.getColumn('E').width= 15;                
+                worksheet.addRow(2).values = ['#', 'Especie', 'Peso Kg', 'Precio $', 'Nota', 'Momento', 'Código']
+                worksheet.getCell(`A1`).value = "Stock de "+formatedStockdata[0].name +" ( "+formatedStockdata.length+" )"; // Assign title to cell A1 -- THIS IS WHAT YOU'RE LOOKING FOR.
+                worksheet.mergeCells('A1:G1'); // Extend cell over all column headers
+                worksheet.getCell(`A1`).alignment = { horizontal: 'center' }; // Horizontally center your text
+                 
+                // loop through data and add each one to worksheet                
+                // worksheet.header=['#','Especie','Peso','Precio','Nota','FechadateFile','Código'];
+                
+                formatedStockdata.forEach(singleData => {
                 worksheet.addRow(singleData);
-                });
-        
+                }); 
+                worksheet.getRow(1).font = { bold: true,size:20 };
+                worksheet.getRow(2).font = { bold: true };
                 // loop through all of the rows and set the outline style.
                 worksheet.eachRow({ includeEmpty: false }, row => {
                 // store each cell to currentCell
@@ -445,6 +425,7 @@ function Catalog() {
         
                 // download the processed file
                 saveAs(new Blob([buf]), `${fileName}.xlsx`);
+                toast.success("Descargando XLS: "+ formatedStockdata[0].name) ;
             }
             
          }catch(error){
@@ -464,36 +445,13 @@ function Catalog() {
                 <Typography variant="h4" color="white.main">
                     Catalogo
                 </Typography>
-            </Box>
-
-            {openModalPublishItem &&
-                <ChangePublishedStatusModal 
-                    show={openModalPublishItem}
-                    handleShowModal={(show) => {
-                        setopenModalPublishItem(false);
-                    }}
-                    // edit={itemToEdit}
-                    reset={() => resetList()}
-                />
-            }
-
-            {openModalAddItem &&
-                <LotesArticleModal 
-                    // show={openModalAddItem}
+            </Box>         
+          
+            {openListStockModal && 
+                <ListStockModal
+                    show={openListStockModal}
                      handleShowModal={(show) => {
-                        setopenModalAddItem(show);
-                    }} 
-                    // permissions={permissions}
-                    // edit={itemToEdit}
-                    // actionType={typeForm}
-                    reset={() => resetList()}
-                />
-            }
-            {openModalArticle && 
-                <AddArticleModal
-                    show={openModalArticle}
-                     handleShowModal={(show) => {
-                        setOpenModalArticle(false);
+                        setOpenListStockModal(false);
                     }}
                     permissions={permissions}                  
                     reset={() => resetList()}

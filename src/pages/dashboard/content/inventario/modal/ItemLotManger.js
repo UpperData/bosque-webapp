@@ -50,11 +50,38 @@ const RootStyle = styled(Card)(({ theme }) => ({
     textAlign: 'center',
     padding: theme.spacing(5, 5),
     width: "95%",
+    height:"90%",
     margin: "auto",
     maxWidth: "800px",
     backgroundColor: "#fff",
+    position: "fixed",
+    display: "block",    
+    zIndex: "1000",
+    overflowY: "auto",
+    top:"20"
+  
 }));
-
+const CloseModal = styled('div')(({ theme }) => ({
+    position:'absolute',
+    top:'20px',
+    right:'20px',
+    width:'30px',
+    height:'30px',
+    border:'none',
+    background:'none',
+    cursor:'pointer',
+    transition: '.3s ease all',
+    borderRadius:'5px',
+    color:'#1766DC',
+    hover:{
+     background:'#F2F2F2'
+    },
+    svg:{
+         width:'100%',
+         height:'100%'
+    }
+ 
+ }));
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 
@@ -86,6 +113,7 @@ function ItemLotManger({
     const [itemLots, setItemLots]                       = useState(false);
     const [showAddItemModal,setShowAddItemModal]        =useState(false); 
     const [currentItem, setCurrentItem]                 = useState([]);
+    const [nexNumItem,setNexNumItem]            =useState({});
    
     const openAddItemModal = (row) => {
         row.name=lot.name;
@@ -194,11 +222,12 @@ function ItemLotManger({
     const columns  = [    
         {         
             field: 'id',     
-            headerName: '#',
+            headerName: 'Cod.',
+            headerAlign: 'center',
             maxWidth: 60,
             minWidth: 60,
             flex: 1,
-            sortable: false,
+            sortable: true,
             renderCell: (cellValues) =>  
                 <Tooltip title="clik para editar" placement="top">                     
                     <TextField  
@@ -213,10 +242,36 @@ function ItemLotManger({
                         value={ cellValues.row.id } 
                     />                        
                 </Tooltip>         
+        },
+        {         
+            field: 'numitem',     
+            headerName: '#',
+            headerAlign: 'center',
+            maxWidth: 60,
+            minWidth: 60,
+            flex: 1,
+            sortable: true,
+            filterable: true,
+            type:'number',
+            renderCell: (cellValues) =>  
+                <Tooltip title="clik para editar" placement="top">                     
+                    <TextField  
+                        sx={{
+                            fontWeight: 'normal', 
+                            mb:0, 
+                            justifyContent: "start"
+                        }} 
+                        fullWidth 
+                        variant="standard"
+                        onClick={() => openAddItemModal(cellValues.row)}
+                        value={ cellValues.row.numItem } 
+                    />                        
+                </Tooltip>         
         },{ 
             editable: true,
             field: 'weight',     
             headerName: 'Peso',
+            headerAlign: 'center',
             maxWidth: 50,
             minWidth: 50,
             flex: 1,
@@ -241,10 +296,11 @@ function ItemLotManger({
             editable: false,
             field: 'condition.name',     
             headerName: 'Condición',
-            maxWidth: 150,
-            minWidth: 150,
+            headerAlign: 'center',
+            maxWidth: 130,
+            minWidth: 130,
             flex: 1,
-            sortable: false,
+            sortable: true,
             renderCell: (cellValues) => { /*
                 let data = currentLot.itemLots;
                 
@@ -261,14 +317,42 @@ function ItemLotManger({
                         {data.note} 
                     </Typography>   */
             }
+        },{ 
+            field: 'updatedAt',    
+            headerName: 'Actualizado',
+            sortable: true,
+            maxWidth: 175,
+            minWidth: 175,
+            flex: 1,
+            headerAlign: 'center',
+            type:'dateTime',
+            /* renderCell: (cellValues) => { 
+                let data = cellValues;                
+                return  <Typography 
+                    sx={{
+                        fontWeight: 'bold', 
+                        mb:0, 
+                        justifyContent: "start"
+                    }} 
+                    fullWidth 
+                    variant="body"
+                    
+                    >
+                        {}
+                       // {moment(data.row.updatedAt).format('DD-MM-YYYY')+" "+ moment(data.row.updatedAt).format('LT')} 
+                    </Typography>   
+            }  */            
+            valueFormatter: params => 
+            moment(params.value).format('DD-MM-YYYY h:mm a')/* +" "+ moment(params.value).format('LT')   */
         },{ 
             editable: true,
             field: 'note',     
             headerName: 'Nota',
+            headerAlign: 'center',
             maxWidth: 200,
             minWidth: 100,        
             flex: 1,
-            sortable: false,
+            sortable: true,
             renderCell: (cellValues) => { /*
                 let data = currentLot.itemLots;
                 
@@ -286,15 +370,24 @@ function ItemLotManger({
                     </Typography>   */
             }
         },{ 
-            field: 'createdAt',    
-            headerName: 'Creación',
-            sortable: false,
-            maxWidth: 100,
-            minWidth: 100,
-            flex: 1,
+            field: 'editar',    
+            headerName: '',
+            sortable: true,
+            maxWidth: 95,
+            minWidth: 95,            
             headerAlign: 'center',
-            valueFormatter: params => 
-            moment(params?.value).format("DD/MM/YYYY")
+            align: 'center',
+            filterable: false,
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                return <Button                    
+                    variant="contained"
+                    color="primary" 
+                    onClick={() => openAddItemModal(data.row)}
+                >
+                    Editar
+                </Button>
+            }
         }
         ]
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
@@ -320,6 +413,22 @@ function ItemLotManger({
         setShowAddItemModal(false);
         allItems();
     }
+    const numItem =  async ()  => {       
+        const url = '/Inventory/currentNumItem/'+lot.articleId;
+         await axios.get(url).then((res) => {           
+            if(res.result){
+                 setNexNumItem(res.data.currentItem);
+                // xItem=res.data                
+                console.log("nexNumItem")
+                console.log(nexNumItem)
+                console.log("res.data")
+                console.log(res.data)
+                // return  res.data.setNexNumItem   
+            }
+        }).catch((err) => {
+            console.error(err);
+        });
+    } 
     return (
         <>
         {showAddItemModal && <AddItemModal 
@@ -327,6 +436,7 @@ function ItemLotManger({
             handleShowModal={(show) => {
                 setShowAddItemModal(false);
             }}
+            nextNum={nexNumItem.currentItem}
             permissions={permissions}
             reset={() => resetModalAddItem()}
             articleName 
@@ -345,11 +455,16 @@ function ItemLotManger({
                 }}
             >
             <RootStyle>
+                <CloseModal onClick={() => handleShowModal(false)}> 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    </svg>
+                </CloseModal>
                     <Typography id="modal-modal-title" variant="h5" component="h4" sx={{mb: 3}}>
-                        {lot.name}
+                        {lot.name }
                     </Typography>                   
                     <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                        {"Lote # "+lot.id +" - " + moment(lot.receivedDate).format('DD/MM/YYYY')}
+                        {"Lote # "+lot.id +" - " + moment(lot.receivedDate).format('DD/MM/YYYY') +" ( "+ itemLots.length +" ) "}
                     </Typography>    
                     {/* data inventario */}
                     
@@ -357,12 +472,14 @@ function ItemLotManger({
                     <br/>  
 
                     <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>                         
-                        <DataGrid autoHeight 
+                        <DataGrid 
+                        
+                            autoHeight 
                             sx={{mb:6}}
                             rows={itemLots}                           
                             columns={columns}
                             
-                            rowHeight={25}
+                            // rowHeight={30}
                             // onCellEditStop={(params) => handleCellEditStop(params)}
                             // experimentalFeatures={{ newEditingApi: true }}
                             // onCellEditStart={(params) => handleCellEditStart(params)}
@@ -372,8 +489,8 @@ function ItemLotManger({
                             // onCellFocusOut={(params)   => validateChanges(params)}
                             
                             // page={0}
-                            pageSize={6}
-                            rowsPerPageOptions={[6,10,20]}
+                            pageSize={10}
+                            rowsPerPageOptions={[10,20,30]}
                             // autoPageSize
                             rowCount={Object.keys(itemLots || {} ).length}
 

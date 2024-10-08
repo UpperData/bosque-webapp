@@ -71,6 +71,7 @@ const CloseModal = styled('div')(({ theme }) => ({
     }
  
  }));
+
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
@@ -94,16 +95,17 @@ function formatDate(date) {
 
     return [year, month, day].join('-');
 }
-function LotesArticleModal({ 
+function ListStockModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
     reset = () => {}, 
     edit = null ,
     permissions= null
 }) {
-    let items=[];    
+
+    let items=[]  ;    
     function getList(){
-        
+        // setId(id + 1);
         items.push({"id": id , "lote":47,"weight":values.weight,"condition":values.condition,"note":values.note});
                      
     }
@@ -118,57 +120,47 @@ function LotesArticleModal({
     const [condition,setCondition]=useState(1);
     const [note,setnote]=useState(null);
     const [articlesList, setarticlesList] = useState([]);
-    const [articlesLots, setArticlesLots] = useState([]);
+    const [stockList, setStockList] = useState([]);
     const [currentLot,setCurrentLot] = useState([]);        
     const [currenItem,setCurrenItem] =useState(0);
     const [showAddLotModal, setshowAddLotModal] = useState(false);
     const [showItemLotModal, setshowItemLotModal] = useState(false);
+    const [refresh, setRefresh] =useState(true)
     
     const getItems = () => {
        
         const url = '/inVenTory/LotS/'+edit.id+'/*';
         axios.get(url).then((res) => {           
             if(res.data.result){
-                setArticlesLots(res.data.data);        
+                let dataStock=res.data.data;                
+                let formatedDataStock=[];
+                // obtiene lo items por articulos 
+                for (let index = 0; index < dataStock.length; index++) { 
+                    if(dataStock[index].isActived){ // discrimina lotes activos
+                        for (let jindex = 0; jindex < dataStock[index].itemLots.length; jindex++) {                         
+                            if(dataStock[index].itemLots[jindex].conditionId===1){ // discrimina Items disponible
+                                formatedDataStock.push(dataStock[index].itemLots[jindex])
+                            }
+                            
+                        }
+                    }
+                }                
+                setStockList(formatedDataStock);        
             }else{
-                setArticlesLots([]);                
+                setStockList([]);                
             }
         }).catch((err) => {
             console.error(err);
         });
     }
-    const getLots = () => {
-        
-        const url = '/inVenTory/LotS/'+edit.id+'/*';
-        axios.get(url).then((res) => {           
-            if(res.data.result){
-                setArticlesLots(res.data.data);        
-            }else{
-                setArticlesLots([]);                
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
-    }
-    const getCurrentLot = () => {        
-        if(currentLot.id>0){
-            setCurrentLot(articlesLots.find(x => x.id===currentLot.id,
-            ))             
-        }else{
-            setCurrentLot([{}]);
-        }
-    }
-    useEffect(() => { 
-        if(currentLot.id>0) getCurrentLot();
-    },[currentLot.id]);
 
-    useEffect(() => {               
-        
+    useEffect(() => { 
         getItems();
-         
     },[]);
-  
-    const openAddLotModal = (lot) => {        
+
+   
+
+  const openAddLotModal = (lot) => {        
         setCurrentLot(lot)
         setshowAddLotModal(true);        
     }
@@ -178,9 +170,8 @@ function LotesArticleModal({
         setCurrentLot(row);
     }
     const resetModalAddItem = () => { // recarga modal padre
-        getItems();
         setshowAddLotModal(false);
-        
+        getItems();
     }
     const resetModalItem = () => { // recarga modal padre
         setshowItemLotModal(false);
@@ -215,17 +206,11 @@ function LotesArticleModal({
         });
     }
     const handleCellEditStop = (params) => {       
-        console.log(params);
-        alert('editando')
+      
         let dataBeforeEdit = params.row;
-        console.log(params.row.note);
-        console.log(params.value);
         if(dataBeforeEdit[params.field] !== params.value){
 
-            console.log("Edit");
-            // ------------------Edit-------------------------
-            dataBeforeEdit[params.field] = params.value;
-            console.log(dataBeforeEdit);
+            dataBeforeEdit[params.field] = params.value;          
             let dataToEdit = dataBeforeEdit;
             editItemData(dataToEdit);
         }
@@ -320,8 +305,7 @@ function LotesArticleModal({
         maxWidth: 60,
         minWidth: 60,
         flex: 1,
-        sortable: true,   
-        headerAlign:'center',     
+        sortable: true,        
         renderCell: (cellValues) =>  
             <Tooltip title="clik para editar" placement="top">                     
                 <TextField  
@@ -331,62 +315,19 @@ function LotesArticleModal({
                         justifyContent: "start"
                     }} 
                     fullWidth 
-                    variant="standard"
-                    onClick={() => openAddLotModal(cellValues.row)}
+                    variant="standard"                    
                     value={ cellValues.row.id } 
                 />                        
             </Tooltip>         
     },{ 
         editable: false,
-        field: 'receivedDate',     
-        headerName: 'Ingreso',
-        maxWidth: 150,
-        minWidth: 150,        
-        sortable: true,
-        headerAlign:'center',
-        type: 'date',        
-        dataFormat:'yyyy-mm-dd',
-        valueFormatter: params => 
-            moment(params.value).format('DD-MM-YYYY')
-        
-    },{ 
-        editable: false,
-        field: 'expDate',     
-        headerName: 'Vencimiento',
-        maxWidth: 150,
-        minWidth: 150,
-        flex: 1,
-        sortable: true,
-        headerAlign:'center', 
-        type: 'date',         
-        dataFormat:'yyyy-mm-dd',/* 
-        renderCell: (cellValues) =>  
-            <Tooltip title="Fecha expiración" placement="top">                     
-                <TextField  
-                    sx={{
-                        fontWeight: 'bold', 
-                        mb:0, 
-                        justifyContent: "start"
-                    }} 
-                    fullWidth 
-                    variant="standard"
-                    type='date'
-                    // value={ cellValues.row.expDate } 
-                    value={ moment(cellValues.row.expDate).format('yyy-MM-dd') } 
-                />                        
-            </Tooltip> */
-            valueFormatter: params => 
-                moment(params.value).format('DD-MM-YYYY')
-    },{ 
-        editable: false,
         field: 'qty',     
-        headerName: 'Cant.',
-        headerAlign:'center',
-        maxWidth: 60,
-        minWidth: 60,
+        headerName: 'Especie',
+        maxWidth: 100,
+        minWidth: 100,
         flex: 1,
         sortable: true,
-        renderCell: (cellValues) => { /*
+        renderCell: (cellValues) => { 
             let data = currentLot.itemLots;
             
             return  <Typography 
@@ -399,39 +340,33 @@ function LotesArticleModal({
                 variant="body"
                 // onClick={() => editItem(data.row)}
                 >
-                    {data.note} 
-                </Typography>   */
+                    {edit.name} 
+                </Typography>   
         }
     },{ 
         editable: false,
-        field: 'isActived',     
-        headerName: 'Estado',
-        headerAlign:'center',
+        field: 'weight',     
+        headerName: 'Peso',
         maxWidth: 80,
         minWidth: 80,
         flex: 1,
         sortable: true,
-        renderCell: (cellValues) =>  
-            <Tooltip title="Status del lote" placement="top">                     
-        <TextField  
-            sx={{
-                fontWeight: 'bold', 
-                mb:0, 
-                justifyContent: "start"
-            }} 
-            fullWidth 
-            variant="standard"
-            // onClick={() => openAddLotModal()}
-            value={ cellValues.row.isActived?"Activo":"Inactivo" } 
-        />                        
-    </Tooltip>
-               
-        
+        renderCell: (cellValues) =>                                   
+            <TextField  
+                sx={{
+                    fontWeight: 'bold', 
+                    mb:0, 
+                    justifyContent: "start"
+                }} 
+                fullWidth 
+                variant="standard"
+                // onClick={() => openAddLotModal()}
+                value={ cellValues.row.weight + " Kg" } 
+            />
     },{ 
         editable: false,
         field: 'note',     
         headerName: 'Nota',
-        headerAlign:'center',
         maxWidth: 200,
         minWidth: 100,        
         flex: 1,
@@ -451,49 +386,6 @@ function LotesArticleModal({
                 >
                     {data.note} 
                 </Typography>   */
-        }
-    },
-    { 
-        field: 'editar',    
-        headerName: '',
-        sortable: false,
-        maxWidth: 100,
-        minWidth: 100,
-        filterable: false,
-        flex: 1,
-        headerAlign: 'center',
-        renderCell: (cellValues) => ( 
-            <Button                
-                variant= "contained"
-                color="primary" 
-                // onClick={() => openItemLotModal(cellValues.row)}
-                onClick={() => openAddLotModal(cellValues.row)}               
-            >
-                Editar
-            </Button>
-        )
-    },
-    { 
-        field: '',    
-        headerName: '',
-        sortable: false,
-        maxWidth: 100,
-        minWidth: 100,
-        flex: 1,
-        filterable: false,
-        headerAlign: 'center',
-        renderCell: (cellValues) => {
-            let isPublished = true;
-
-            return <Button
-                
-                variant={isPublished ? "contained" : "outlined"}
-                color="primary" 
-                onClick={() => openItemLotModal(cellValues.row)}
-               
-            >
-                Items
-            </Button>
         }
     }
     ]
@@ -540,7 +432,7 @@ function LotesArticleModal({
                         </svg>
                     </CloseModal>
                     <Typography id="modal-modal-title" variant="h4" component="h4" sx={{mb: 3}}>
-                        {!edit ? 'Agregar Lote' : 'Lotes de '+ edit.name}
+                       {"Stock de " +edit.name +" ( "+stockList.length+" )"} 
                     </Typography>                   
                         
                     {/* data inventario */}
@@ -549,13 +441,12 @@ function LotesArticleModal({
                     <br/>  
 
                     <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>                         
-                        <DataGrid 
-                            autoHeight 
-                            sx={{mb:12}}
-                            rows={articlesLots}                           
+                        <DataGrid autoHeight 
+                            sx={{mb:6}}
+                            rows={stockList}                           
                             columns={columns}
                             
-                           // rowHeight={30}
+                            rowHeight={30}
                             // onCellEditStop={(params) => handleCellEditStop(params)}
                             // experimentalFeatures={{ newEditingApi: true }}
                             // onCellEditStart={(params) => handleCellEditStart(params)}
@@ -569,7 +460,7 @@ function LotesArticleModal({
                             rowsPerPageOptions={[6,10,20]}
                             // autoPageSize
                             rowCount={Object.keys(currentLot || {} ).length}
-                            
+
                             // disableColumnFilter
                             // disableColumnMenu                            
                             disableColumnSelector
@@ -579,26 +470,11 @@ function LotesArticleModal({
                         />
 
                     </div>
-                    <Grid item md={4} xs={4}>
-                        <Tooltip title="Crear un nuevo lote" placement="top-start">
-                            <Button
-                                id="newLot"
-                                sx={{mb: 2}}
-                                variant="contained"
-                                component="label"
-                                fullWidth
-                                
-                                // onClick={() => openAddArticleModal()}
-                                onClick={() => openAddLotModal({id:0})}
-                            >
-                                Nuevo Lote
-                            </Button>
-                        </Tooltip>
-                    </Grid>                                 
+                                                  
                 </RootStyle>
             </Modal>
         </>
     )
 }
 
-export default LotesArticleModal;
+export default ListStockModal;
