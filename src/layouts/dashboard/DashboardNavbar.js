@@ -47,7 +47,7 @@ export default function DashboardNavbar({ onOpenSidebar }) {
     <RootStyle>
       <ToolbarStyle>
         <MHidden width="lgUp">
-          <IconButton onClick={onOpenSidebar} sx={{ mr: 1, color: 'text.primary' }}>
+          <IconButton onClick={onOpenSidebar} sx={{ mr: 2, color: 'white' }}>
             <Icon  icon={menu2Fill} />
           </IconButton>
         </MHidden>

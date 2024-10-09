@@ -52,7 +52,7 @@ export default function DashboardSidebar({ isOpenSidebar, onCloseSidebar }) {
   // console.log(sidebarConfig);
 
   let finalMenuConfig = sidebarConfig.concat(menu);
-  console.log(finalMenuConfig);
+  // console.log(finalMenuConfig);
 
   useEffect(() => {
     if (isOpenSidebar) {
@@ -62,7 +62,7 @@ export default function DashboardSidebar({ isOpenSidebar, onCloseSidebar }) {
   }, [pathname]);
 
 
-  console.log(userData);
+  // console.log(userData);
 
   let photoURL = "";
   if(userData.people && (userData.people.photo !== null && userData.people.photo !== "")){

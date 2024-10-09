@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/static/css/main.4dc54aa8.css",
+    "main.js": "/static/js/main.f42d09b1.js",
+    "static/js/787.deda760a.chunk.js": "/static/js/787.deda760a.chunk.js",
+    "static/media/NunitoSans-LightItalic.ttf": "/static/media/NunitoSans-LightItalic.cbf912d5470dd9f8a14a.ttf",
+    "static/media/NunitoSans-ExtraBoldItalic.ttf": "/static/media/NunitoSans-ExtraBoldItalic.790b67dd9b1877bc7ee0.ttf",
+    "static/media/NunitoSans-Italic.ttf": "/static/media/NunitoSans-Italic.1f985b9e0795cc82d409.ttf",
+    "static/media/NunitoSans-Light.ttf": "/static/media/NunitoSans-Light.4cffb0809d61ec7ecdff.ttf",
+    "static/media/NunitoSans-Bold.ttf": "/static/media/NunitoSans-Bold.f2f18c2e01d2f39c18c9.ttf",
+    "static/media/NunitoSans-Regular.ttf": "/static/media/NunitoSans-Regular.25d5a42e25da2f3ed7f4.ttf",
+    "static/media/VIVALDII.TTF": "/static/media/VIVALDII.611f7d17480fc267f790.TTF",
+    "static/media/ARS.TTF": "/static/media/ARS.5c51292389c0a0117296.TTF",
+    "static/media/logo.png": "/static/media/logo.e8f866b87a000964ff0f.png",
+    "static/media/IsadoraStd-Regular.otf": "/static/media/IsadoraStd-Regular.dc1cb5f334b2b69890f2.otf",
+    "index.html": "/index.html",
+    "main.4dc54aa8.css.map": "/static/css/main.4dc54aa8.css.map",
+    "main.f42d09b1.js.map": "/static/js/main.f42d09b1.js.map",
+    "787.deda760a.chunk.js.map": "/static/js/787.deda760a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4dc54aa8.css",
+    "static/js/main.f42d09b1.js"
+  ]
+}
