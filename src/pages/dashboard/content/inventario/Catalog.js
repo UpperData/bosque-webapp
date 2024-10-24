@@ -122,7 +122,7 @@ function Catalog() {
         { 
             editable: true,
             field: 'id',     
-            headerName: '#',
+            headerName: 'ID',
             maxWidth: 50,
             minWidth: 50,
             flex: 1,
@@ -475,18 +475,6 @@ function Catalog() {
 
                                 </Grid>
                             </Grid>
-
-                            {alertSuccessMessage !== "" &&
-                                <Alert sx={{mb: 3}} severity="success">
-                                    {alertSuccessMessage}
-                                </Alert>
-                            }
-
-                            {alertErrorMessage !== "" &&
-                                <Alert sx={{mb: 3}} severity="error">
-                                    {alertErrorMessage}
-                                </Alert>
-                            }
                         
                             {data !== null && data.length > 0 !== "" &&
                                 <div className="inventario-content-table">

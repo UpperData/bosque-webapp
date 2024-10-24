@@ -1,38 +1,23 @@
 import React, {useEffect, useState} from 'react'
-import { 
-    Box, 
+import {     
     Grid, 
-    Stack, 
-    ButtonGroup, 
-    Tooltip, 
-    Container, 
-    Typography, 
-    Alert,  
-    Card, 
-    CardContent, 
+    Tooltip,     
+    Typography,     
+    Card,     
     Hidden, 
     Button, 
-    Modal, 
-    Select,
+    Modal,     
     TextField, 
-    Checkbox, 
-    MenuItem, 
-    InputLabel, 
-    FormControl,
-    FormHelperText,
-    Switch,
-    FormControlLabel 
+    
 } from '@mui/material';
-import { DataGrid, DataGridProps } from '@mui/x-data-grid';
-import { LoadingButton } from '@mui/lab';
-import { alpha, styled } from '@mui/material/styles';
+import { DataGrid  } from '@mui/x-data-grid';
+import { styled } from '@mui/material/styles';
 
 import * as Yup from 'yup';
 import { useFormik, Form, FormikProvider } from 'formik';
 import moment from "moment";
 
 import axios from "../../../../../auth/fetch"
-import Loader from '../../../../../components/Loader/Loader';
 import { toast } from 'react-toastify';
 import AddItemModal from './AddItemModal';
 
@@ -97,23 +82,21 @@ const MenuProps = {
 function ItemLotManger({ 
     show = false, 
     handleShowModal = (show) => {}, 
-    reset = () => {},    
+    reset = () => {}, 
     articleName = null,
     articleId =null,
     permissions=null,
     lot=null
 }) {
    
-    const urlLots                                    = "/inVenTory/LOTS";
-    const [typeForm, settypeForm]                       = useState("create");
-    const [itemToEdit, setitemToEdit]                   = useState(null);    
-    const [alertErrorMessage,   setalertErrorMessage]   = useState("");
-    const [isActived,setIsActived]=useState(true);
+    const urlLots                                    = "/inVenTory/LOTS";    
+    const [alertErrorMessage,   setalertErrorMessage]   = useState("");    
     const [sending, setsending]                         = useState(false);
     const [itemLots, setItemLots]                       = useState(false);
     const [showAddItemModal,setShowAddItemModal]        =useState(false); 
     const [currentItem, setCurrentItem]                 = useState([]);
     const [nexNumItem,setNexNumItem]            =useState({});
+    const [updatedData,setUpdatedData] =useState(false)
    
     const openAddItemModal = (row) => {
         row.name=lot.name;
@@ -121,6 +104,9 @@ function ItemLotManger({
         setShowAddItemModal(true);       
       
     }
+    const resetMon = () => {
+        reset()
+    } 
     const LoginSchema =     Yup.object().shape({
         name:               Yup.string().required('Debe ingresar un nombre'),  
         description:        Yup.string().required('Debe ingresar una descripción'),        
@@ -166,7 +152,7 @@ function ItemLotManger({
                     url:    urlLots,
                     data
                 }).then((res) => {
-                    setsending(false);
+                    setUpdatedData(false)
                     if(res.data.result){                        
                         if(reset){
                             toast.success(res.data.message);
@@ -188,27 +174,14 @@ function ItemLotManger({
                 });
 
             } catch(e) {
-                // setformErrors(e);
-
-                /*
-                    const config = {
-                        onUploadProgress: progressEvent => {
-                        let progressData = progress;
-                        progressData = (progressEvent.loaded / progressEvent.total) * 100;
-
-                        console.log(progressData);
-
-                        setprogress(progressData);
-                        setcount(count + progressData);
-                        }
-                    }
-                */
+                console.log(e)
             }
         }
     });
     const allItems = () => {          
         const url = '/Inventory/Itemlot/'+lot.id;
-        axios.get(url).then((res) => {           
+        axios.get(url).then((res) => {   
+            setUpdatedData(true);        
             if(res.result){
                 setItemLots(res.data);        
             }else{
@@ -268,30 +241,14 @@ function ItemLotManger({
                     />                        
                 </Tooltip>         
         },{ 
-            editable: true,
+            editable: false,
             field: 'weight',     
             headerName: 'Peso',
             headerAlign: 'center',
             maxWidth: 50,
             minWidth: 50,
             flex: 1,
-            sortable: true,                                
-            renderCell: (cellValues) => { /*
-                const innerNotes = JSON.parse(currentLot.itemLots?.condition);            
-                let data = currentLot.itemLots;            
-                return  <Typography 
-                            sx={{
-                                fontWeight: 'bold', 
-                                mb:0, 
-                                justifyContent: "start"
-                            }} 
-                            fullWidth 
-                            variant="body"
-                            // onClick={() => editItem(data.row)}
-                        >
-                            {innerNotes.name} 
-                        </Typography>  */
-            }
+            sortable: true,                                            
         },{ 
             editable: false,
             field: 'condition.name',     
@@ -300,23 +257,7 @@ function ItemLotManger({
             maxWidth: 130,
             minWidth: 130,
             flex: 1,
-            sortable: true,
-            renderCell: (cellValues) => { /*
-                let data = currentLot.itemLots;
-                
-                return  <Typography 
-                    sx={{
-                        fontWeight: 'bold', 
-                        mb:0, 
-                        justifyContent: "start"
-                    }} 
-                    fullWidth 
-                    variant="body"
-                    // onClick={() => editItem(data.row)}
-                    >
-                        {data.note} 
-                    </Typography>   */
-            }
+            sortable: true
         },{ 
             field: 'updatedAt',    
             headerName: 'Actualizado',
@@ -325,25 +266,9 @@ function ItemLotManger({
             minWidth: 175,
             flex: 1,
             headerAlign: 'center',
-            type:'dateTime',
-            /* renderCell: (cellValues) => { 
-                let data = cellValues;                
-                return  <Typography 
-                    sx={{
-                        fontWeight: 'bold', 
-                        mb:0, 
-                        justifyContent: "start"
-                    }} 
-                    fullWidth 
-                    variant="body"
-                    
-                    >
-                        {}
-                       // {moment(data.row.updatedAt).format('DD-MM-YYYY')+" "+ moment(data.row.updatedAt).format('LT')} 
-                    </Typography>   
-            }  */            
+            type:'dateTime',                       
             valueFormatter: params => 
-            moment(params.value).format('DD-MM-YYYY h:mm a')/* +" "+ moment(params.value).format('LT')   */
+            moment(params.value).format('DD-MM-YYYY h:mm a')
         },{ 
             editable: true,
             field: 'note',     
@@ -352,23 +277,7 @@ function ItemLotManger({
             maxWidth: 200,
             minWidth: 100,        
             flex: 1,
-            sortable: true,
-            renderCell: (cellValues) => { /*
-                let data = currentLot.itemLots;
-                
-                return  <Typography 
-                    sx={{
-                        fontWeight: 'bold', 
-                        mb:0, 
-                        justifyContent: "start"
-                    }} 
-                    fullWidth 
-                    variant="body"
-                    // onClick={() => editItem(data.row)}
-                    >
-                        {data.note} 
-                    </Typography>   */
-            }
+            sortable: true
         },{ 
             field: 'editar',    
             headerName: '',
@@ -392,43 +301,15 @@ function ItemLotManger({
         ]
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
     useEffect(() => {               
-        
-        allItems();
+        if(!updatedData) allItems();
          
-    },[]);
-    /* const getItems = () => {
-       
-        const url = '/inVenTory/LotS/'+lot.articleId+'/';
-        axios.get(url).then((res) => {           
-            if(res.data.result){
-                setItemLots(res.data.data);        
-            }else{
-                setItemLots([]);                
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
-    } */
+    },[itemLots]);
+ 
     const resetModalAddItem = () => { // recarga modal padre
-        setShowAddItemModal(false);
+        setShowAddItemModal(false);               
         allItems();
     }
-    const numItem =  async ()  => {       
-        const url = '/Inventory/currentNumItem/'+lot.articleId;
-         await axios.get(url).then((res) => {           
-            if(res.result){
-                 setNexNumItem(res.data.currentItem);
-                // xItem=res.data                
-                console.log("nexNumItem")
-                console.log(nexNumItem)
-                console.log("res.data")
-                console.log(res.data)
-                // return  res.data.setNexNumItem   
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
-    } 
+
     return (
         <>
         {showAddItemModal && <AddItemModal 
@@ -439,6 +320,7 @@ function ItemLotManger({
             nextNum={nexNumItem.currentItem}
             permissions={permissions}
             reset={() => resetModalAddItem()}
+            resetM={() => resetMon()}
             articleName 
             articleId={lot.articleId}                     
             currentItem={currentItem}
@@ -471,7 +353,19 @@ function ItemLotManger({
                     <hr/>  
                     <br/>  
 
-                    <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>                         
+                    <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>  
+
+                        <Grid container justifyContent="space-between" columnSpacing={1}>                                
+                            <Grid sx={{mb: 2}} item md={1} xs={12}>
+                                
+                                <Button variant="contained"
+                                onClick={() => allItems()} >
+                                Actualizar
+                                </Button>
+
+                            </Grid>
+                        </Grid>
+                       
                         <DataGrid 
                         
                             autoHeight 
@@ -489,8 +383,8 @@ function ItemLotManger({
                             // onCellFocusOut={(params)   => validateChanges(params)}
                             
                             // page={0}
-                            pageSize={10}
-                            rowsPerPageOptions={[10,20,30]}
+                            pageSize={6}
+                            rowsPerPageOptions={[6,10,20]}
                             // autoPageSize
                             rowCount={Object.keys(itemLots || {} ).length}
 

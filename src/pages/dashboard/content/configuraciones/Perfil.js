@@ -32,7 +32,7 @@ export default function Perfil() {
     }
 
     return (
-        <Page title="Perfil | RepuestosGo">
+        <Page title="Perfil | Bosque Marino">
         <Container maxWidth="xl">
             <Box sx={{ pb: 3 }}>
                 <Typography variant="h4" color="white.main">

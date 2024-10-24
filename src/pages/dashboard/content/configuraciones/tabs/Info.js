@@ -25,10 +25,6 @@ function Info() {
             if(search){
                 axios.get(urlProfile)
                 .then((res) => {
-
-                    console.log("-----");
-                    console.log(res.data);
-
                     setdata(res.data.data);
                     setloading(false);
 
@@ -100,7 +96,7 @@ function Info() {
                         <Hidden mdDown>
                             <Grid item md={5} xs={0}>
                                 <Box sx={{width: "100%", maxWidth: "450px", margin: "auto"}}>
-                                    <img src="/assets/svgimg/mechanic-info.svg" alt="Informacion de perfil" />
+                                    <img src="/assets/img/user_information.png" alt="Informacion de perfil" width={250} height={250} />                                    
                                 </Box>
                             </Grid>
                         </Hidden>

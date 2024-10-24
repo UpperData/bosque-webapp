@@ -80,14 +80,7 @@ function LotesArticleModal({
     edit = null ,
     permissions= null
 }) {
-    let items=[]  ;    
-    function getList(){
-        // setId(id + 1);
-        items.push({"id": id , "lote":47,"weight":values.weight,"condition":values.condition,"note":values.note});
-        // setList(items); 
-        console.log(list);               
-    }
-    
+    let items=[]  ;      
     const [list, setList] = useState([]);
     const [id, setId] = useState(null);
     const [exp,setExp] =useState(null)
@@ -148,7 +141,7 @@ function LotesArticleModal({
              getItems();
             if(edit && articlesLots)getLots();            
         }
-    },[]);
+    },[articlesList]);
   
     const openAddLotModal = () => {
         setshowAddLotModal(true);        

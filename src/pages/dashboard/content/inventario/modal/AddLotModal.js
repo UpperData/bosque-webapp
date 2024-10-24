@@ -89,6 +89,7 @@ const MenuProps = {
 function AddLotModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
+    resetModalAddItem= (show) => {}, 
     reset = () => {},
     permissions = null,
     article = null,
@@ -149,6 +150,7 @@ function AddLotModal({
                         resetForm();
                         reset();
                         handleShowModal(false);
+                        resetModalAddItem(false);
                     }
                 }else{
                     toast.warning(res.data.message);                    

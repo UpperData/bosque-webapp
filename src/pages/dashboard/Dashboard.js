@@ -37,7 +37,8 @@ import Rrhh from './content/reports/Rrhh';
 import Catalog from './content/inventario/Catalog'
 import Contracts from './content/tiendas/Contracts';
 import AdmTiendas from './content/tiendas/AdmTiendas';
-import Administracion from './content/inventario/Administracion';
+import MesssageWhatsapp from './content/notifications/MesssageWhatsapp';
+import MesssageApp from './content/notifications/MesssageApp';
 
 function PrivateRoute({ children }) {
     // const auth = useAuth();
@@ -169,6 +170,11 @@ function Dashboard() {
                 <Route path="Reports/atencioN"          element={<PrivateRoute><Appointment /></PrivateRoute>}/>
                 <Route path="RepOrts/InvEntario"        element={<PrivateRoute><Inventory /></PrivateRoute>}/>
                 <Route path="Reports/RRHh"              element={<PrivateRoute><Rrhh /></PrivateRoute>}/>
+               
+                {/* Notificaicones */}
+                <Route path="message/Whatsapp"          element={<PrivateRoute><MesssageWhatsapp /></PrivateRoute>}/>
+                <Route path="message/App"               element={<PrivateRoute><MesssageApp /></PrivateRoute>}/>
+                <Route path="message/RRHh"              element={<PrivateRoute><Rrhh /></PrivateRoute>}/>
 
                 {/* Notificaciones */}
                 {/* <Route path='Notification/ws' element={<PrivateRoute> <Appointment /> </PrivateRoute>} /> */}

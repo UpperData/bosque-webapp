@@ -72,11 +72,12 @@ const MenuProps = {
       },
     },
 };
-let xItem={};    
+  
 function AddLotModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
     reset = () => {},
+    resetM = () => {}, 
     permissions = null,
     article = null,
     articleId=null,
@@ -137,14 +138,16 @@ function AddLotModal({
                 setsending(false);
                 numItem();
                 if(res.data.result){                        
-                    if(reset){
-                        toast.success(res.data.message);                        
-                        resetForm();
-                        reset();                        
-                    }
+                    
+                    toast.success(res.data.message);                        
+                    // resetForm();
+                                       
+                
                 }else{
                     toast.warning(res.data.message);
                 }
+                reset(); 
+                
 
             }).catch((err) => {
                 console.log('__Error procesando lote____');

@@ -459,7 +459,7 @@ function ListStockModal({
                             pageSize={6}
                             rowsPerPageOptions={[6,10,20]}
                             // autoPageSize
-                            rowCount={Object.keys(currentLot || {} ).length}
+                            rowCount={Object.keys(stockList || {} ).length}
 
                             // disableColumnFilter
                             // disableColumnMenu                            

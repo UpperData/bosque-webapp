@@ -1,14 +1,12 @@
 import {useState, useEffect} from "react"
-import * as Yup from 'yup';
-import { useFormik, Form, FormikProvider } from 'formik';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Excel from 'exceljs';
 import { saveAs } from 'file-saver';
-import moment, { updateLocale } from "moment";
+import moment from "moment";
 
 // material
-import { Box, Grid, Stack, ToggleButtonGroup,ButtonGroup, Tooltip, Container, Typography, Alert,  Card, CardContent, Hidden, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
-import { DataGrid, DataGridProps } from '@mui/x-data-grid';
+import { Box, Grid,  Tooltip, Container, Typography, Alert,  Card, CardContent, Hidden, Button } from '@mui/material';
+import { DataGrid  } from '@mui/x-data-grid';
 
 
 // components
@@ -16,26 +14,13 @@ import Page from '../../../../components/Page';
 import axios from "../../../../auth/fetch"
 import Loader from '../../../../components/Loader/Loader';
 
-import Icon from '@mdi/react';
-import CaretDown from "@iconify/icons-ant-design/caret-down"
-import CaretUp from "@iconify/icons-ant-design/caret-up"
-import CaretRight from "@iconify/icons-ant-design/caret-right"
-import CaretLeft from "@iconify/icons-ant-design/caret-left"
 import { getPermissions } from "../../../../utils/getPermissions";
 import { useSelector } from "react-redux";
-import { toast } from 'react-toastify';
 import ExportExcel from "react-export-excel"
 import AddArticleModal from "./modal/AddArticleModal";
-import AddInventoryModal from "./modal/AddInventoryModal";
 import ChangePublishedStatusModal from "./modal/ChangePublishedStatusModal";
 import LotesArticleModal from "./modal/LotesArticleModalFull";
 
-const ExcelJS = require("exceljs");
-
-const ExcelFile     = ExportExcel.ExcelFile;
-const ExcelSheet    = ExportExcel.ExcelSheet;
-const ExcelColumn   = ExportExcel.ExcelColumn;
-let currentStock=[]
 // ----------------------------------------------------------------------
 
 function Inventario() {
@@ -138,7 +123,7 @@ function Inventario() {
         { 
             editable: true,
             field: 'id',     
-            headerName: '#',
+            headerName: 'ID',
             maxWidth: 50,
             minWidth: 50,
             flex: 1,
@@ -280,8 +265,51 @@ function Inventario() {
             flex: 1,
             sortable: true,
             headerAlign: 'center'
-        },
-        {
+        },{ 
+            field: 'lotes',    
+            headerName: '',            
+            maxWidth: 120,
+            minWidth: 120,
+            align: 'center',
+            flex: 1,
+            sorteable:false,
+            filterable: false,
+            headerAlign: 'center',
+            renderCell: (cellValues) => {
+                let data = cellValues;
+                return <Button                    
+                    variant="contained"
+                    color="primary" 
+                    onClick={() => editItem
+                        (data.row)} 
+                >
+                    Lotes
+                </Button>
+            }
+        },        
+        { 
+            field: 'isPublished',    
+            headerName: '',
+            sortable: true,
+            maxWidth: 120,
+            minWidth: 120,
+            align: 'center',
+            flex: 1,
+            headerAlign: 'center',
+            filterable: false,
+            renderCell: (cellValues) => {
+                let isPublished = cellValues.row.isPublished;
+
+                return <Button
+                    
+                    variant={isPublished ? "contained" : "outlined"}
+                    color="primary" 
+                    onClick={() => editPublishedItem(cellValues.row)}
+                >
+                    {isPublished ? 'Ocultar' : 'Publicar'}
+                </Button>
+            }
+        },{
             headerName: ``, 
             headerAlign: 'center',  
             align: 'center',  
@@ -320,52 +348,7 @@ function Inventario() {
             }
             
             
-        },
-        { 
-            field: 'isPublished',    
-            headerName: '',
-            sortable: true,
-            maxWidth: 120,
-            minWidth: 120,
-            align: 'center',
-            flex: 1,
-            headerAlign: 'center',
-            filterable: false,
-            renderCell: (cellValues) => {
-                let isPublished = cellValues.row.isPublished;
-
-                return <Button
-                    
-                    variant={isPublished ? "contained" : "outlined"}
-                    color="primary" 
-                    onClick={() => editPublishedItem(cellValues.row)}
-                >
-                    {isPublished ? 'Ocultar' : 'Publicar'}
-                </Button>
-            }
-        },{ 
-            field: 'lotes',    
-            headerName: '',            
-            maxWidth: 120,
-            minWidth: 120,
-            align: 'center',
-            flex: 1,
-            sorteable:false,
-            filterable: false,
-            headerAlign: 'center',
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                return <Button                    
-                    variant="contained"
-                    color="primary" 
-                    onClick={() => editItem
-                        (data.row)} 
-                >
-                    Lotes
-                </Button>
-            }
-        }
-        
+        }        
     ];
     
     const editItemData = (itemData) => {
@@ -451,7 +434,7 @@ function Inventario() {
     }
 
     const columnsXLS = [
-        { header: '#', key: 'numOrder' },
+        { header: '#', key: 'lots.itemLots.numItem' },
         { header: 'Especie', key: 'name' },
         { header: 'Peso Kg', key: 'lots.itemLots.weight' },
         { header: 'Precio $ ', key:'weightPrice'},

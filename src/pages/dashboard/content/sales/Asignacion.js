@@ -1,19 +1,22 @@
-import {useState, useEffect} from "react"
+import {useState, useEffect,useRef,useMemo} from "react"
 import * as Yup from 'yup';
 import { useFormik, Form, FormikProvider } from 'formik';
 // material
-import { Divider,CardContent, Hidden, Box, Grid, Stack, ButtonGroup, Container, Typography,Alert,  Card, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import { Divider,CardContent, Hidden, Box, Grid,   Container, Typography,Alert,  Card, Button, Modal, TextField, Checkbox, Select, MenuItem, InputLabel, FormControl, Tooltip } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { LoadingButton } from '@mui/lab';
-import { alpha, styled } from '@mui/material/styles';
-import { Link, useLocation } from 'react-router-dom';
+import { styled } from '@mui/material/styles';
+import { useLocation } from 'react-router-dom';
 
 // components
 import Page from '../../../../components/Page';
 import ReleaseItemModal from "./modal/ReleaseItemModal";
 import axios from "../../../../auth/fetch"
 import Loader from '../../../../components/Loader/Loader';
-import { getPermissions } from "../../../../utils/getPermissions";
+// import { getPermissions } from "../../../../utils/getPermissions";
+import AddOrderModal from "./modal/AddOrderModal";
+
+
 import { useSelector } from "react-redux";
 
 import ExportExcel from "react-export-excel"
@@ -21,7 +24,8 @@ import ExportExcel from "react-export-excel"
 import { Icon } from '@iconify/react';
 import CaretRight from "@iconify/icons-ant-design/caret-right"
 import CaretLeft from "@iconify/icons-ant-design/caret-left"
-import { BorderAll } from "@material-ui/icons";
+/* import { BorderAll } from "@material-ui/icons";
+import { defaultFormat } from "numeral"; */
 
 const ExcelFile     = ExportExcel.ExcelFile;
 const ExcelSheet    = ExportExcel.ExcelSheet;
@@ -48,7 +52,7 @@ const RootStyleFromModalSmall = styled(Card)(({ theme }) => ({
     maxWidth: "600px",
     backgroundColor: "#fff",
 }));
-
+let products=[];
 function Asignacion() {
 
     // const [data, setdata]                            = useState(rows);
@@ -61,8 +65,7 @@ function Asignacion() {
     const [doctors, setdoctors]                         = useState(null);
     const [items, setitems]                             = useState(null);
     const [totalOrder,setTotalOrder]                    = useState(null);
-
-    const [openSaveChanges, setopenSaveChanges]         = useState(false);
+    
     const [sending, setsending]                         = useState(false);
 
     const [alertSuccessMessage, setalertSuccessMessage] = useState("");
@@ -81,6 +84,10 @@ function Asignacion() {
     const [searchItemsToInventory, setsearchItemsToInventory] = useState(false);
     const [inventoryItems, setinventoryItems]                 = useState(null);
     const [openModalReleaseItem, setopenModalReleaseItem]   = useState(false);
+    const [totalAccount,setTotalAccount]                  =useState(0);
+    const [currentClient, setCurrentClient]              =useState(null);
+    
+
 
     const urlGetPersonal            =  "/sales/userWithOrder"; // "/EMplOyeFIle/BYGRoUP/get/?grp=7&grp=6";
     const urlGetItemFromClient      =  "/sales/all/"; // "/invENtOrY/aSSGNmEnT/byDoCTOR/";
@@ -121,49 +128,56 @@ function Asignacion() {
 
     const { errors, touched, values, isSubmitting, handleSubmit, getFieldProps, setFieldValue, resetForm } = formik;
     
-    const getDoctors = () => {
-        // Empleados (medico, enfermera)
+    const getDoctors = () => {        
         axios.get(urlGetPersonal)
         .then((res) => {          
-            let dataList = res.data.rows;
+            let dataList = res.data.rows;            
             if(dataList.length > 0){
-                setdoctors(dataList);
+                setdoctors(dataList);                
                 setloading(false);
-                
-                // setnurses(dataList[1].accountRoles);
-
             }
 
         }).catch((err) => {
             console.error(err);
         });
     }
-
+ 
     useEffect(async () => {
         if(loading){
             if(search){
-                setsearch(false);
-                await getDoctors();
+               
+                getDoctors();                 
+                setsearch(false);              
             }
         }
     });
 
     const getItemsByDoctor = (id) => {
         axios.get(urlGetItemFromClient+id)
-        .then((res) => {
+        .then((res) => {     
+            console.log("Data completa")
+            console.log(res.data.rows)       
+            for (let index = 0; index < res.data.rows.length; index++) {
+                res.data.rows[index].id=res.data.rows[index]['itemLot.id']                         
+            }            
             setitems(res.data.rows);
             setTotalOrder({"totalOrder":res.data.totalOrder,"count":res.data.count})
             setsearchData(false);
 
         }).catch((err) => {
-            console.error(err);
+            console.log(err);
         });
     }
 
-    const changeDoctor = (id) => {        
-        setdoctor(id);
+    const changeDoctor = (clicID) => {             
+        // inventoryItems.filter(item => Number(item.quantity) > 0);        
+        let curr=doctors.find(x=>x.id===Number(clicID))          
+        console.log(curr);
+        setCurrentClient(curr)
+        setdoctor(clicID);
         setsearchData(true);
-        getItemsByDoctor(id);
+        getItemsByDoctor(clicID);
+        
     }
 
     const getItemsList = () => {
@@ -196,8 +210,8 @@ function Asignacion() {
     const openModal = () => {
         // setitemToEdit(null);
         // resetForm();
-        getItemsList();
-        settypeForm("create");
+       // getItemsList(); //--> hacerlo en nueva pantalla
+        // settypeForm("create");
         setopenModalAddItem(true);
     }
 
@@ -215,10 +229,6 @@ function Asignacion() {
             let item        = list.find(item => Number(item.id) === Number(id));
             let index       = list.indexOf(item);
             
-            // console.log(list);
-            // console.log(index);
-            // console.log(list[index]);
-
             item.quantity   = newCount;
             list[index]     = item;
 
@@ -226,10 +236,26 @@ function Asignacion() {
             setcount(count * 20);
         }
     }
+    
+    const updateOrder=(items)=>{
+        console.log("items") 
+        console.log(items)        
+        axios.put("CAR/ediT/ONE", items).then((res) => {
+            if(res.data.result){
+                setalertSuccessMessage(res.data.message);
+                setsending(false);
 
+                setTimeout(() => {
+                    setalertSuccessMessage("");
+                }, 20000);
+            }
+        }).catch((err) => {
+           console.log(err)
+        });
+    }
     let columns = [
-        { field: 'id',          headerName: 'ID', width: 70 },
-        { field: 'numItem',          headerName: '#', width: 70 },
+        { field: 'itemLot.id',          headerName: 'ID Lote', width: 120,  hide: true},
+        { field: 'shoppingCarId',          headerName: 'ID Pedido', width: 70 },
         { 
             field: 'itemLot.lot.article.name',     
             headerName: `Especie`,
@@ -238,11 +264,14 @@ function Asignacion() {
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
-                let data = cellValues;
-                // console.log(data);
-                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {data.row["itemLot.lot.article.name"]+" ( "+parseFloat(data.row["itemLot.weight"]).toFixed(2) +" Kg ) #"+data.row.id}
-                </Typography>
+                let data = cellValues;   
+                let cant=!data.row["itemLot.lot.article.isSUW"]?+parseFloat(data.row["qty"]).toFixed(2):parseFloat(data.row["itemLot.weight"]) ;
+                
+                return <Tooltip title={cant.toFixed(2) +" kg en pedido"} placement="top">
+                    <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                        {data.row["itemLot.lot.article.name"]+" #"+ data.row['itemLot.numItem'] +" - "+cant.toFixed(2) +" Kg" }
+                    </Typography>
+                </Tooltip>
             }
         },
         { 
@@ -253,15 +282,14 @@ function Asignacion() {
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
-                let data = cellValues;
-                // console.log(data);
+                let data = cellValues;                
                 return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {"$"+data.row["itemLot.lot.article.price"]||0.0}
+                    {"$"+parseFloat(data.row["itemLot.lot.article.price"]).toFixed(2)||0.0}
                 </Typography>
             }
         },
         { 
-            field: 'weigth',     
+            field: 'finalWeigth',     
             headerName: `Peso kg`,
             maxWidth: 100,
             minWidth: 100,
@@ -269,73 +297,106 @@ function Asignacion() {
             sortable: false,
             align:'center',
             BorderAll:4,
+            editable:true,
             renderCell: (cellValues) => {
-                let data = cellValues;
-                // console.log(data);
-                return <TextField id="weigth" type="number"autoFocus margin="dense" variant="outlined"  size="5"/>;
-            }
+                let data = cellValues;                    
+                return  <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                            {parseFloat(data.row.finalWeigth || 1).toFixed(2) }                        
+                        </Typography>   
+            
+            /* <TextField
+                            hiddenLabel
+                            size='small'
+                            fullWidth
+                            autoComplete="lastname"
+                            type="number"
+                            label=""                            
+                            InputProps={{
+                                readOnly: true,
+                                style: {textAlign: 'center'}
+                            }}
+                            value={parseFloat(data.row.finalWeigth || 1).toFixed(2) }
+                        /> */
+                            
+                                  },
+
+            // valueGetter: (params) =>`${parseFloat(params.row.weigth || 1).toFixed(2)}`
+           
         },{ 
             field: 'discount',     
-            headerName: `Descuento`,
-            maxWidth: 100,
-            minWidth: 100,
+            headerName: `Descuento $`,
+            editable:true,
+            maxWidth: 150,
+            minWidth: 150,
             flex: 1,
             sortable: false,
-            align:'center',
+            align:'left',
             BorderAll:4,
             renderCell: (cellValues) => {
-                let data = cellValues;                
-                return <TextField id="discount" type="number"autoFocus margin="dense" variant="outlined"  size="5" defaultValue={0.00}/>;
-            }
+                let data = cellValues;    
+                let dataItem =items; 
+                let currentIndex;               
+                for (let index = 0; index < dataItem.length; index++) {                   
+                    if(dataItem[index]['itemLot.id']===data.row['itemLot.id']) {
+                        currentIndex=index;
+                        dataItem[index].discount=(parseFloat(data.row.discount || 0).toFixed(2))
+                    }
+                    
+                } 
+                
+                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                    {parseFloat(items[currentIndex].discount || 0).toFixed(2) }
+                   
+                </Typography>
+            }            
+            
         },{ 
-            field: 'subTotal',     
+            field: 'subSaleTotal',     
             headerName: `Sub total`,
             maxWidth: 80,
             minWidth: 80,
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
-                let data = cellValues;
-                // console.log(data);
-                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
-                    {"$" + data.row.subTotal}
+                let data = cellValues; 
+                let dataItem =items;
+                let grantTotal=Number("0.00");
+                for (let index = 0; index < dataItem.length; index++) {                   
+                    if(dataItem[index]['itemLot.id']===data.row['itemLot.id']) {
+                        dataItem[index].subSaleTotal=((parseFloat(data.row.finalWeigth || 1).toFixed(2)*parseFloat(data.row['itemLot.lot.article.price']).toFixed(2)) - parseFloat(data.row.discount || 0).toFixed(2)).toFixed(2)                                               
+                    }
+                    grantTotal+=Number(parseFloat(dataItem[index].subSaleTotal).toFixed(2))
+                    setitems(dataItem);
+                }  
+                setTotalAccount(grantTotal)
+                return <Typography sx={{fontWeight: 'bold', mb:0, fontSize:[18]}} variant="body">
+                    {`${"$"+((parseFloat(data.row.finalWeigth || 1).toFixed(2)*parseFloat(data.row['itemLot.lot.article.price']).toFixed(2)) - parseFloat(data.row.discount || 0).toFixed(2)).toFixed(2)}` }
+                   
                 </Typography>
-            }
+            },
+            // valueGetter: (params) => `${"$"+((parseFloat(params.row.weigth || 1).toFixed(2)*parseFloat(params.row['itemLot.lot.article.price']).toFixed(2)) - parseFloat(params.row.discount || 0).toFixed(2)).toFixed(2)}`
+            /* renderCell: (cellValues) => {
+                let data = cellValues;                
+                return <Typography sx={{fontWeight: 'bold', mb:0}} variant="body">
+                    {"$" + data.row.subTotal - data.field.discount}
+                </Typography>
+            } */
         },
-        {  field: 'release',  
+        {  field: 'release',
+            headerName: ``,  
             width: 80,
             flex: 1,
             sortable: false,
             renderCell: (cellValues) => {
-                let data = cellValues;
-                // console.log(data);
+                let data = cellValues;                
                 return <Button  onClick={() => releaseItem(data.row)} sx={{fontWeight: 'normal', mb:0}} variant="contained">
                     Liberar
                 </Button>
             }
-        },         
-        /* ,       
-        { 
-            field: 'id',    
-            headerName: '',
-            sortable: false,
-            maxWidth: 250,
-            minWidth: 200,
-            flex: 1,
-            headerAlign: 'center',
-            renderCell: (cellValues) => {
-                let data = cellValues;
-                let id   = data.row.id;
-                return  <Button onClick={() => startToReturnItem(id)} type="button" size="small" sx={{py: 1, px: 0, minWidth: 0, width: "100%"}} color="primary" variant="contained">
-                            Devolver a Almacén
-                        </Button>
-                            
-            }
-        } */
+        }
     ];
 
-    let inventorycolumns = [
-        // { field: 'id',          headerName: 'ID', width: 70 },
+    let inventorycolumns = [        
         { 
             editable: false,
             field: 'articleId',     
@@ -478,16 +539,6 @@ function Asignacion() {
         });
     }
 
-    const startToReturnItem = (id) => {
-        if(id === null){
-            settypeReturn("all");
-        }else{
-            setselectedItem(id);
-            settypeReturn("one");
-        }
-        
-        setopenModalItemReturn(true);
-    }
     const resetList = () => {
         changeDoctor(doctor);
         // setopenModalAddItem(false);
@@ -559,7 +610,7 @@ function Asignacion() {
             });
         }
     }
-
+       
     return (
         <Page title="Pedidos | Bosque Marino">
         <Container maxWidth="xl">
@@ -578,97 +629,20 @@ function Asignacion() {
                     reset={() => resetList()}
                 />
             }
-
-            <Modal
-                open={openModalAddItem}
-                onClose={handleCloseModalAddItem}
-                aria-labelledby="modal-add-item-to-asign"
-                aria-describedby="modal-add-item-to-asign"
-                style={{ 
-                    display:'flex', 
-                    alignItems:'center', 
-                    justifyContent:'center' 
-                }}
+            {openModalAddItem && 
+                <AddOrderModal
+                    show={openModalAddItem}
+                    handleShowModal={(show) => {
+                        setopenModalAddItem(false);
+                    }}
+                    // permissions={permissions}                  
+                    reset={() => resetList()}
+                    client={currentClient}
+                    actionType={typeForm}
                 
-            >
-                <RootStyle>
-
-                <FormikProvider value={formik}>
-                    <Form autoComplete="off" noValidate onSubmit={handleSubmit}>
-
-                    <Typography sx={{mb: 4}} id="modal-modal-title" variant="h3" component="h3">
-                        {typeForm === "create" ? "Asignar un producto" : "Editar un producto"}
-                    </Typography>
-
-                    {!searchItemsToInventory && inventoryItems !== null && inventoryItems.length > 0
-                        ?
-                            <div>
-                                
-                                <div>
-
-                                    <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
-                                        <DataGrid
-                                            sx={{mb:12}}
-                                            rows={inventoryItems}
-                                            columns={inventorycolumns}
-                                            hideFooter
-
-                                            // onCellEditStop={(params) => handleCellEditStop(params)}
-                                            // experimentalFeatures={{ newEditingApi: true }}
-                                            // onCellEditStart={(params) => handleCellEditStart(params)}
-                                            // processRowUpdate={processRowUpdate}
-
-                                            // onCellEditCommit={(params) => handleCellEditStop(params)}
-                                            // onCellFocusOut={(params)   => validateChanges(params)}
-
-                                            page={0}
-                                            pageSize={6}
-                                            rowsPerPageOptions={[6,10,20]}
-                                            // autoPageSize
-                                            rowCount={inventoryItems.length}
-
-                                            disableColumnFilter
-                                            disableColumnMenu
-                                            autoHeight 
-                                            disableColumnSelector
-                                            disableSelectionOnClick
-                                            // checkboxSelection
-                                        />
-                                    </div>
-                                    
-                                    {/*
-                                        // (!permissions.crea && typeForm === "create") || 
-                                            // (!permissions.edita && typeForm === "edit")  || 
-                                            // (values.name === "" || values.description === "")
-                                    */}
-
-                                    <LoadingButton
-                                        onClick={() => asignItems()}
-                                        fullWidth
-                                        size="large"
-                                        type="button"
-                                        variant="contained"
-                                        loading={sending}
-                                        color="primary"
-                                        disabled={itemListByQuantityChange === null || (itemListByQuantityChange !== null && itemListByQuantityChange.length === 0)}
-                                    >
-                                        Asignar
-                                    </LoadingButton>
-                                </div>
-                            
-
-                            </div>
-                        :
-                            <Box sx={{my: 3}}>
-                                <Loader />
-                            </Box>
-                    }
-
-                    </Form>
-                </FormikProvider>
-                    
-                </RootStyle>
-            </Modal>
+                />
+            }
+           
 
             <Modal
                 open={openModalItemReturn}
@@ -688,7 +662,7 @@ function Asignacion() {
                         {typeReturn === "one" ? "Devolver asignación" : "Devolver asignaciones"}
                     </Typography>
                     <Typography sx={{mb: 3}} component="p">
-                        ¿Esta seguro de anular peido?
+                        ¿Esta seguro de anular pedido?
                     </Typography>
                     <LoadingButton
                         onClick={() => returnItems()}
@@ -715,6 +689,7 @@ function Asignacion() {
                                     <Button 
                                         disabled={doctor === null || searchData} 
                                         onClick={() => openModal()} 
+                                        // onClick={() => openModal({id:0})} // pasar cliente actual
                                         variant="contained" 
                                         color="primary" 
                                         fullWidth 
@@ -723,6 +698,7 @@ function Asignacion() {
                                     >
                                         Nuevo pedido
                                     </Button>
+                                    
                                 </Grid>
                                 {/* <Grid item md={4} xs={12} sx={{mb: 2}}>
                                     {(doctor === null || searchData) 
@@ -784,9 +760,9 @@ function Asignacion() {
                                             Cliente
                                         </InputLabel>
                                         <Select
-                                            fullWidth
+                                            
                                             labelId="Cliente"
-                                            id="doctors"
+                                            id="doctorsSelect"
                                             defaultValue=""
                                             value={doctor === null ? "" : doctor}
                                             onChange={(e) => changeDoctor(e.target.value)}
@@ -831,16 +807,17 @@ function Asignacion() {
                                                                     }} 
                                                                     fullWidth 
                                                                     variant="body"color="primary" >
-                                                            Total pedido: $ 
+                                                            Total pedido:
                                                             </Typography>
                                                             <Typography  sx={{
                                                                         fontWeight: 'bold', 
                                                                         mb:0, 
+                                                                        fontSize:[20]
                                                                         
                                                                     }} 
                                                                     fullWidth 
                                                                     variant="body"color="primary" >
-                                                            {" "+totalOrder.totalOrder}
+                                                            {" $ "+totalAccount}
                                                             </Typography>
                                                         </Box>  
                                                     </Grid> 
@@ -879,22 +856,30 @@ function Asignacion() {
                                                 </Grid>
                                                 <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}> 
                                                     <DataGrid
+                                                        // onRowEditCommit={updateOrder(data.row)}
+                                                        // onCellEditCommit={totalOrder}
+                                                        // onStateChange={alert("Aplicar onChange")}
+                                                        // onCellEditStop={alert("Aplicar onChange")}
+                                                       //  onCellKeyDown={alert("Aplicar onChange")}
+                                                        onCellEditCommit={(cellValues) => updateOrder(cellValues)}
+                                                        // onRowEditCommit={(params) => handleCellEditStop(params)}
+                                                        // onCellFocusOut={(params)   => validateChanges(params)}
                                                         sx={{mb:8}}
                                                         rows={items}
                                                         columns={columns}
-
+                                                        // editMode="row"               
                                                         page={0}
                                                         pageSize={10}
                                                         rowsPerPageOptions={[10,20,30]}
-                                                        // autoPageSize
+                                                        // autoPageSize                                                        
                                                         rowCount={items.length}
-
                                                         disableColumnFilter
                                                         disableColumnMenu
                                                         autoHeight 
                                                         disableColumnSelector
                                                         disableSelectionOnClick
                                                         // checkboxSelection
+                                                        
                                                     />
                                                 </div>
                                                 <LoadingButton
@@ -911,7 +896,7 @@ function Asignacion() {
                                                     (values.name === "" || values.description === "")
                                                 } */
                                             >
-                                                {"Confirmar pago - $" +  totalOrder.totalOrder}
+                                                {"Confirmar pago - $" +  totalAccount}
 
                                             </LoadingButton>
                                             </div>

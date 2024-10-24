@@ -141,15 +141,10 @@ export default function CreateAccount() {
     const getRoleList = () => {
         axios.get(urlGetRoleList)
         .then((res) => {
-
-            console.log("-----");
-
             if(res.data.result){
-                console.log(res.data.data);
                 setroleList(res.data.data);
                 setloading(false);
             }
-
         }).catch((err) => {
             console.error(err);
         });

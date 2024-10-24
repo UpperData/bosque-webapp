@@ -32,12 +32,9 @@ export default function Membership() {
     const [count, setcount]                             = useState(0);
     const [sending, setsending]                         = useState(false);
 
-    let urlGetData              = "/AcCoUnt/GET/ROLE/byAccoUnT/:accountId";
-    let urlValidateEmail        = "/accoUnt/EmAIl/VALIDAtor/";
-    let urlValidatePhone        = "/accoUnt/phone/VALIDAtor/";
-    let getMembershipsByEmail   = "/memBeRship/Get/Byemail/";
-    let getMembershipsByPhone   = "/memBeRship/Get/ByPhone/";
 
+    let urlValidatePhone        = "/accoUnt/phone/VALIDAtor/";   
+    let getMembershipsByPhone   = "/memBeRship/Get/ByPhone/";
     let urlAsignRevoke          = "membeRship/asing/revoque/";
 
     const LoginSchema =     Yup.object().shape({
@@ -59,8 +56,7 @@ export default function Membership() {
             await setmembershipsSelected(newList);
         }
 
-        await setcount(count + 5);
-        console.log(newList);
+        await setcount(count + 5);        
     }
 
     const getMemberships = () => {

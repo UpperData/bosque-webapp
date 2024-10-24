@@ -1,26 +1,12 @@
 import React, {useEffect, useState} from 'react'
 
 import { 
-    Box, 
-    Grid, 
-    Stack, 
-    ButtonGroup, 
-    Tooltip, 
-    Container, 
-    Typography, 
-    Alert,  
+    Box,
+    Typography,   
     Card, 
-    CardContent, 
     Hidden, 
     Button, 
-    Modal, 
-    Select,
-    TextField, 
-    Checkbox, 
-    MenuItem, 
-    InputLabel, 
-    FormControl,
-    FormHelperText
+    Modal
 } from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
@@ -31,14 +17,6 @@ import { useFormik, Form, FormikProvider } from 'formik';
 import moment from "moment";
 
 import axios from "../../../../../auth/fetch"
-import Loader from '../../../../../components/Loader/Loader';
-import CategorySelect from '../../../../../components/selects/Category';
-import ClaseSelect from '../../../../../components/selects/Clase';
-import AnioSelect from '../../../../../components/selects/Anio';
-import MarcaSelect from '../../../../../components/selects/Marca';
-import ModelSelect from '../../../../../components/selects/Models';
-import SubCategorySelect from '../../../../../components/selects/SubCategory';
-import UploaderProductImg from '../../rrhh/Components/UploaderProductImages';
 import { toast } from 'react-toastify';
 
 const RootStyle = styled(Card)(({ theme }) => ({
@@ -80,11 +58,14 @@ function ReleaseItemModalModal({
             "isSUW":null
             };
             let shoppingCarId=null;
-            data.itemLot["shoppingCarId"]= item.id;
+            data.shoppingCarId= item.shoppingCarId;
+            data.shoppingCarQty= item.qty;
             data.itemLot["id"]=item["itemLot.id"];
             data.itemLot["lotId"]=item["itemLot.lot.id"];
+            data.itemLot["lotStatus"]=item["itemLot.lot.isActived"];            
             data.accountId=item["account.id"];
             data.isSUW=item["itemLot.lot.article.isSUW"];
+            data.articleId=item["itemLot.lot.article.id"];
         console.log(data)
         axios.put('/CAR/Cancel', data).then((res) => {
           

@@ -1,43 +1,25 @@
 import React, {useEffect, useState} from 'react'
 import AddLotModal from "./AddLotModal";
 import ItemLotModal from "./ItemLotManger";
-import { 
-    Box, 
-    Grid, 
-    Stack, 
-    ButtonGroup, 
-    Tooltip, 
-    Container, 
-    Typography, 
-    Alert,  
+import {   
+    Grid,
+    Typography,
     Card, 
-    CardContent, 
     Hidden, 
     Button, 
-    Modal, 
-    Select,
-    TextField, 
-    Checkbox, 
-    MenuItem, 
-    InputLabel, 
-    FormControl,
-    FormHelperText,
-    Switch,
-    FormControlLabel 
+    Modal,
+    TextField,
+    Tooltip
 } from '@mui/material';
-import { DataGrid, DataGridProps } from '@mui/x-data-grid';
-import { LoadingButton } from '@mui/lab';
-import { alpha, styled } from '@mui/material/styles';
+import { DataGrid } from '@mui/x-data-grid';
+import { styled } from '@mui/material/styles';
 
 import * as Yup from 'yup';
-import { useFormik, Form, FormikProvider } from 'formik';
+import { useFormik } from 'formik';
 import moment from "moment";
-
 import axios from "../../../../../auth/fetch"
-import Loader from '../../../../../components/Loader/Loader';
-import UploaderProductImg from '../../rrhh/Components/UploaderProductImages';
-import { toast } from 'react-toastify';
 
+import { toast } from 'react-toastify';
 
 const RootStyle = styled(Card)(({ theme }) => ({
     boxShadow: 'none',
@@ -81,19 +63,7 @@ const MenuProps = {
       },
     },
 };
-function formatDate(date) {
-     let d = new Date(date);
-     let month = '' + (d.getMonth() + 1);
-     let day = '' + d.getDate();
-     let year = d.getFullYear();
 
-    if (month.length < 2) 
-        month = '0' + month;
-    if (day.length < 2) 
-        day = '0' + day;
-
-    return [year, month, day].join('-');
-}
 function LotesArticleModal({ 
     show = false, 
     handleShowModal = (show) => {}, 
@@ -102,47 +72,22 @@ function LotesArticleModal({
     permissions= null
 }) {
     let items=[];    
-    function getList(){
-        
-        items.push({"id": id , "lote":47,"weight":values.weight,"condition":values.condition,"note":values.note});
-                     
-    }
-    
-    const [list, setList] = useState([]);
-    const [id, setId] = useState(null);
-    const [exp,setExp] =useState(null)
-    const [loading, setloading] = useState(true);
-    const [sending, setsending] = useState(false);
-    const [usersList, setusersList] = useState([]);
-    const [weight,setWeight]=useState(0);
-    const [condition,setCondition]=useState(1);
-    const [note,setnote]=useState(null);
-    const [articlesList, setarticlesList] = useState([]);
+       
+   
+    const [sending, setsending] = useState(false);    
     const [articlesLots, setArticlesLots] = useState([]);
     const [currentLot,setCurrentLot] = useState([]);        
     const [currenItem,setCurrenItem] =useState(0);
     const [showAddLotModal, setshowAddLotModal] = useState(false);
     const [showItemLotModal, setshowItemLotModal] = useState(false);
-    
+    const [updatedData,setUpdatedData] =useState(false)
     const getItems = () => {
        
         const url = '/inVenTory/LotS/'+edit.id+'/*';
         axios.get(url).then((res) => {           
             if(res.data.result){
-                setArticlesLots(res.data.data);        
-            }else{
-                setArticlesLots([]);                
-            }
-        }).catch((err) => {
-            console.error(err);
-        });
-    }
-    const getLots = () => {
-        
-        const url = '/inVenTory/LotS/'+edit.id+'/*';
-        axios.get(url).then((res) => {           
-            if(res.data.result){
-                setArticlesLots(res.data.data);        
+                setArticlesLots(res.data.data); 
+                setUpdatedData(true);       
             }else{
                 setArticlesLots([]);                
             }
@@ -163,10 +108,9 @@ function LotesArticleModal({
     },[currentLot.id]);
 
     useEffect(() => {               
-        
-        getItems();
+        if(!updatedData) getItems();
          
-    },[]);
+    },[articlesLots]);
   
     const openAddLotModal = (lot) => {        
         setCurrentLot(lot)
@@ -186,50 +130,8 @@ function LotesArticleModal({
         setshowItemLotModal(false);
         getItems();
     }
-    const editItemData = (itemData) => {        
-        let data = {
-            articleId:  itemData.articleId,
-            existence:  itemData.existence,
-            price:      itemData.price,
-            minStock:   itemData.minStock
-        }
-        setsending(true);
-        
 
-        axios({
-            method: "PUT",
-            url:    "urlEditItemData",
-            data
-        }
-            // config
-        ).then((res) => {          
-            getList();
-            if(res.data.result){
-                setTimeout(() => {
-                    toast.success(res.data.message);
-                }, 2000);
-            }
-
-        }).catch((err) => {
-            let fetchError = err;
-        });
-    }
-    const handleCellEditStop = (params) => {       
-        console.log(params);
-        alert('editando')
-        let dataBeforeEdit = params.row;
-        console.log(params.row.note);
-        console.log(params.value);
-        if(dataBeforeEdit[params.field] !== params.value){
-
-            console.log("Edit");
-            // ------------------Edit-------------------------
-            dataBeforeEdit[params.field] = params.value;
-            console.log(dataBeforeEdit);
-            let dataToEdit = dataBeforeEdit;
-            editItemData(dataToEdit);
-        }
-    };
+ 
     const FormSchema =      Yup.object().shape({
         articleId:              Yup.string().trim().required('Campo requerido'),
         existence:              Yup.string().trim().required('Campo requerido'),
@@ -262,8 +164,8 @@ function LotesArticleModal({
                 data
             }).then((res) => {
                 toast.success(res.data.message);
-                setsending(false);
-                
+                setsending(false);        
+                setUpdatedData(false);        
                 
             }).catch((err) => {
                 console.error(err);
@@ -294,10 +196,9 @@ function LotesArticleModal({
                 url:    '/inVenTory/LotS/ITEMS',
                 data
             }).then((res) => {
-                toast.success(res.data.message);
-                setsending(false);
-                
-                
+                toast.success(res.data.message);                
+                reset();
+                setUpdatedData(false)
             }).catch((err) => {
                 console.error(err);
             });
@@ -454,26 +355,6 @@ function LotesArticleModal({
         }
     },
     { 
-        field: 'editar',    
-        headerName: '',
-        sortable: false,
-        maxWidth: 100,
-        minWidth: 100,
-        filterable: false,
-        flex: 1,
-        headerAlign: 'center',
-        renderCell: (cellValues) => ( 
-            <Button                
-                variant= "contained"
-                color="primary" 
-                // onClick={() => openItemLotModal(cellValues.row)}
-                onClick={() => openAddLotModal(cellValues.row)}               
-            >
-                Editar
-            </Button>
-        )
-    },
-    { 
         field: '',    
         headerName: '',
         sortable: false,
@@ -495,6 +376,26 @@ function LotesArticleModal({
                 Items
             </Button>
         }
+    },
+    { 
+        field: 'editar',    
+        headerName: '',
+        sortable: false,
+        maxWidth: 100,
+        minWidth: 100,
+        filterable: false,
+        flex: 1,
+        headerAlign: 'center',
+        renderCell: (cellValues) => ( 
+            <Button                
+                variant= "contained"
+                color="primary" 
+                // onClick={() => openItemLotModal(cellValues.row)}
+                onClick={() => openAddLotModal(cellValues.row)}               
+            >
+                Editar
+            </Button>
+        )
     }
     ]
     
@@ -547,7 +448,16 @@ function LotesArticleModal({
                     
                     <hr/>  
                     <br/>  
+                    <Grid container justifyContent="space-between" columnSpacing={1}>                                
+                            <Grid sx={{mb: 2}} item md={1} xs={12}>
+                                
+                                <Button variant="contained"
+                                onClick={() => getItems()} >
+                                Actualizar
+                                </Button>
 
+                            </Grid>
+                        </Grid>
                     <div style={{display: 'table', tableLayout:'fixed', width:'100%'}}>                         
                         <DataGrid 
                             autoHeight 
