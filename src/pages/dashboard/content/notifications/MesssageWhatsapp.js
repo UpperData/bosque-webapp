@@ -14,6 +14,8 @@ import Loader from '../../../../components/Loader/Loader';
 import Page from '../../../../components/Page';
 import { useSelector } from 'react-redux';
 import { Font } from '@react-pdf/renderer';
+import { withSize } from 'react-sizeme';
+import { title } from 'process';
 
 export default function MesssageWhatsapp() {
 
@@ -31,9 +33,12 @@ export default function MesssageWhatsapp() {
 
     const memberships                                   = useSelector(state => state.dashboard.memberships);
     const [membershipsSelected, setmembershipsSelected] = useState([]);
+    const [contactList,setContactList]                    =useState([]);
 
     const [count, setcount]                             = useState(0);
     const [sending, setsending]                         = useState(false);
+    const [titulo,setTitulo]                            =useState(null);
+    const [msg,setMsg]                                  =useState(null);
 
 
     let urlValidatePhone        = "/accoUnt/phone/VALIDAtor/";   
@@ -43,20 +48,58 @@ export default function MesssageWhatsapp() {
     const LoginSchema =     Yup.object().shape({
         text:               Yup.string().required('')
     });
+
+    const getContacts=()=>{
+        const group={"group":membershipsSelected}
+        axios({
+            method: "post",
+            url:    "/memBeRship/Get/ByGroup/",
+            data:   group
+        }).then((res) => {
+            setContactList(res.data)
+        }).catch((err) => {
+            console.error(err);
+        });
+    } 
+    const sendWhatsapp=()=>{
+        let contact= getContacts();
+        let arrayMsj={"tel":contactList,"msg":msg,"title":titulo};
+        axios({
+            method: "POST",            
+            url:    "http://localhost:7170/sendWhatsapp/",
+            data:   arrayMsj
+        }).then((res) => {
+            setsending(false);            
+            if(res.result){
+                setalertSuccessMessage(res.data.message);                
+                setTimeout(() => {
+                    setalertSuccessMessage("");
+                }, 8000);
+            }
+
+        }).catch((err) => { 
+            console.log(err)           
+            let fetchError = err;            
+            if(fetchError.response){                   
+                setalertErrorMessage(err.response.data.message || err.response.data.data.message);
+                setsending(false);               
+            }
+        });
+    }
+
     const getRoleList = () => {
         axios.get("/front/Role/get/*")
         .then((res) => {
                 setRoleList(res.data.data);
                 setloading(false);
 
-            console.log("roleList");
-            console.log(roleList);
-
         }).catch((err) => {
             console.error(err);
         });
     }
     const toggleValueToMemberships = async (value) => {
+
+        console.log(membershipsSelected)
         let newList = membershipsSelected;
         // console.log(newList);
         let verify  = newList.find(item => item === value);
@@ -124,67 +167,6 @@ export default function MesssageWhatsapp() {
         });
     }
 
-    const getUser = () => {
-        setsearch(true);
-        setalertErrorMessage("");
-        setalertSuccessMessage("");
-
-        axios.get(urlValidatePhone+phone)
-        .then((res) => {
-            
-            getMemberships();
-
-        }).catch((err) => {
-            let error = err.response;
-            if(error){
-                if(error.data){
-                    setdata(null);
-                    setsearch(false);
-                    setloading(false);    
-                    setalertErrorMessage(error.data.data.message);    
-                    setTimeout(() => {
-                        setalertErrorMessage("");
-                    }, 5000);
-                }
-            }
-        });
-    }
-
-
-    const revokeMembership = (id) => {
-        console.log(id);
-
-        let sendData = {
-            accountId:  data.accountId,
-            roleId:     id,
-            isActived:  false
-        };
-
-        let newListSelected = membershipsSelected.filter(item => Number(item) !== id);
-
-        setsending(true);
-            
-        axios({
-            method: "post",
-            url:    urlAsignRevoke,
-            data:   sendData
-        }).then((res) => {
-
-            setalertSuccessMessage("Membresía revocada exitosamente!");
-            setmembershipsSelected(newListSelected);
-
-            setTimeout(() => {
-                setalertSuccessMessage("");
-            }, 5000);
-
-            setsending(false);
-            getMemberships();
-
-        }).catch((err) => {
-            setsending(false);
-        });
-    }
-
 
     let RoleListByUser = [];
     if(data !== null){
@@ -197,131 +179,8 @@ export default function MesssageWhatsapp() {
             }
         }
     }
-
-    let itemsCompleted  = 0;
-    const revokeAll = () => {
-        let itemslength     = RoleListByUser.length;
-        setsending(true);
-
-        for (let i = 0; i < RoleListByUser.length; i++) {
-            itemsCompleted ++ ;
-            let isvalid = itemsCompleted === itemslength;
-
-            const membership = RoleListByUser[i];
-            let sendData = {
-                accountId:  data.accountId,
-                roleId:     membership,
-                isActived:  false
-            };
-                
-            axios({
-                method: "post",
-                url:    urlAsignRevoke,
-                data:   sendData
-            }).then((res) => {
-
-                if(isvalid){
-                    setsending(false);
-                    
-                    setalertSuccessMessage("Membresías revocadas exitosamente!");
-                    setmembershipsSelected([]);
-
-                    setTimeout(() => {
-                        setalertSuccessMessage("");
-                    }, 3000);
-                    getMemberships();
-                }
-
-            }).catch((err) => {
-                setsending(false);
-            });
-        }
-
-        itemsCompleted = 0;
-
-    }
-
-    const updateAllData = () => {
-        let list            = membershipsSelected;
-        let newMembershipsList         = [];
-
-        setsending(true);
-
-        // items in true
-        for (let i = 0; i < list.length; i++) {
-            const membership        = list[i];
-            let isInclude           = RoleListByUser.includes(membership);
-
-            let newActionMembership = {};
-
-            if(!isInclude){
-                newActionMembership.role   = membership;
-                newActionMembership.action = true;
-                newMembershipsList.push(newActionMembership);
-            }
-        }
-
-        // items in false
-        for (let i = 0; i < RoleListByUser.length; i++) {
-            const membership        = RoleListByUser[i];
-            let isInclude           = membershipsSelected.includes(membership);
-
-            let newActionMembership = {};
-
-            if(!isInclude){
-                newActionMembership.role   = membership;
-                newActionMembership.action = false;
-                newMembershipsList.push(newActionMembership);
-            }
-        }
-
-        let itemslength             = newMembershipsList.length;
-        // console.log(newMembershipsList);
-
-        if(itemslength > 0){
-            for (let i = 0; i < newMembershipsList.length; i++) {
-                itemsCompleted++;
-                const membership        = newMembershipsList[i];
-                let isvalid             = itemsCompleted === itemslength;
-
-                let sendData = {
-                    accountId:  data.accountId,
-                    roleId:     membership.role,
-                    isActived:  membership.action
-                };
-                    
-                axios({
-                    method: "post",
-                    url:    urlAsignRevoke,
-                    data:   sendData
-                }).then((res) => {
-        
-                    if(isvalid){
-                        setsending(false);
-                        
-                        setalertSuccessMessage("Membresías actualizadas exitosamente!");
-                        getMemberships();
-
-                        setTimeout(() => {
-                            setalertSuccessMessage("");
-                        }, 3000);
-                    }
-        
-                }).catch((err) => {
-                    setsending(false);
-                });
-            }
-        }else{
-            setsending(false);
-            setalertErrorMessage("No hay cambios por realizar");
-
-            setTimeout(() => {
-                setalertErrorMessage("");
-            }, 5000);
-        }
-
-        itemsCompleted = 0;
-    }
+ 
+  
 
     useEffect(()=>{
       if(!loading|| !search)   getRoleList()        
@@ -354,67 +213,67 @@ export default function MesssageWhatsapp() {
 
                             <Grid container justifyContent="space-between" columnSpacing={3}>
 
-                                <Grid item xs={12} md={5}>
+                                <Grid item xs={2} md={5}>
 
                                     <Typography variant="h5" align="center" sx={{mb: 3, mt: 2, fontWeight: "bold"}}>
                                         Grupos
                                     </Typography>
-
-                                    {roleList !== null 
-                                        ?
-                                        <div> 
-                                            <List>
-                                                {roleList.length > 0 &&
-                                                    
-                                                        <Scrollbar
-                                                            sx={{
-                                                                height: 320,
-                                                                '& .simplebar-content': { maxHeight: 320 ,height: 320,  display: 'flex', flexDirection: 'column' }
-                                                            }}
+                                        <List>
+                                            {roleList.length > 0 &&
+                                                
+                                                <Scrollbar
+                                                    sx={{
+                                                        height: 320,
+                                                        with:100,
+                                                        '& .simplebar-content': { maxHeight: 320 ,height: 320, maxWidth:200,  display: 'flex', flexDirection: 'column' }
+                                                    }}
+                                                >
+                                                {roleList.map((role, key) => {
+                                                    let item = role;
+                                                    return <ListItem 
+                                                            // sx={{ background: membershipsSelected.includes("Drafts") ? "primary" : "" }} 
+                                                            disablePadding
+                                                            key={key}
                                                         >
-                                                        {roleList.map((role, key) => {
-                                                            let item = role;
-                                                            return <ListItem 
-                                                                    // sx={{ background: membershipsSelected.includes("Drafts") ? "primary" : "" }} 
-                                                                    disablePadding
-                                                                    key={key}
-                                                                >
-                                                                    <ListItemButton 
-                                                                        selected={membershipsSelected.includes(role.id)} 
-                                                                        onClick={() => toggleValueToMemberships(role.id)}
-                                                                    >
-                                                                        <ListItemText primary={role.name} />
-                                                                    </ListItemButton>
-                                                                </ListItem>
-                                                        })}
-                                                        </Scrollbar>
-                                                    
-                                                }
-                                            </List>
-                                            
-                                        </div>
-                                        :
-                                        <Alert sx={{my: 3}} severity="info">
-                                            Seleccione un usuario para ver sus membresías.
-                                        </Alert>  
-                                    }
-
-                                </Grid>       
+                                                            <ListItemButton 
+                                                                selected={membershipsSelected.includes(role.id)} 
+                                                                onClick={() => toggleValueToMemberships(role.id)}
+                                                            >
+                                                                <ListItemText primary={role.name} />
+                                                            </ListItemButton>
+                                                        </ListItem>
+                                                })}
+                                                </Scrollbar>                                                    
+                                            }
+                                        </List>
+                                    </Grid>      
                                 
                             
                                 <Divider orientation="vertical" flexItem />                                    
-                                    <Grid item xs={12} md={6}>                                    
+                                    <Grid item xs={6} md={6}>                                    
                                         <Box sx={{ pb: 3 }}>
                                             <Typography variant="h5" align="center" sx={{mb: 3, mt: 2, fontWeight: "bold"}}>
                                                 Contenido
                                             </Typography>
                                         </Box> 
                                         <FormControl fullWidth sx={{ m: 1 }}>
+                                        <InputLabel htmlFor="outlined-adornment-amount">Título</InputLabel>
+                                        <OutlinedInput
+                                            id="outlined-adornment-amount"                                           
+                                            
+                                            onChange={(e)=>setTitulo(e.target.value)}
+                                            value={titulo}
+                                            
+                                        />
+                                        </FormControl>
+                                        <FormControl fullWidth sx={{ m: 1 }}>
                                         <InputLabel htmlFor="outlined-adornment-amount">Mensaje</InputLabel>
                                         <OutlinedInput
                                             id="outlined-adornment-amount"
                                             startAdornment={<InputAdornment position="start">Texto a enviar</InputAdornment>}
                                             label="Amount"
+                                            onChange={(e)=>setMsg(e.target.value)}
+                                            value={msg}
                                             multiline
                                             rows={8}
                                         />
@@ -425,9 +284,9 @@ export default function MesssageWhatsapp() {
                                                 type="button"
                                                 fullWidth
                                                 sx={{py: .9, mt:2}}
-                                                // onClick={() => updateAllData()}
+                                                onClick={() => sendWhatsapp()}
                                                 loading={sending}
-                                                disabled={sending || (membershipsSelected.length === 0 && membershipsList.length === 0)}
+                                                disabled={sending || (membershipsSelected.length === 0 && membershipsList.length === 0 && title && msg )}
                                             >
                                                 Enviar Whatsapp
                                             </LoadingButton>

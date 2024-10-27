@@ -371,58 +371,8 @@ export default function MesssageApp() {
                                 </Alert>
                             }
 
-                            <Grid container justifyContent="space-between" columnSpacing={3}>
-
-                                <Grid item xs={12} md={5}>
-
-                                    <Typography variant="h5" align="center" sx={{mb: 3, mt: 2, fontWeight: "bold"}}>
-                                        Grupos
-                                    </Typography>
-
-                                    {roleList !== null 
-                                        ?
-                                        <div> 
-                                            <List>
-                                                {roleList.length > 0 &&
-                                                    
-                                                        <Scrollbar
-                                                            sx={{
-                                                                height: 320,
-                                                                '& .simplebar-content': { maxHeight: 320 ,height: 320,  display: 'flex', flexDirection: 'column' }
-                                                            }}
-                                                        >
-                                                        {roleList.map((role, key) => {
-                                                            let item = role;
-                                                            return <ListItem 
-                                                                    // sx={{ background: membershipsSelected.includes("Drafts") ? "primary" : "" }} 
-                                                                    disablePadding
-                                                                    key={key}
-                                                                >
-                                                                    <ListItemButton 
-                                                                        selected={membershipsSelected.includes(role.id)} 
-                                                                        onClick={() => toggleValueToMemberships(role.id)}
-                                                                    >
-                                                                        <ListItemText primary={role.name} />
-                                                                    </ListItemButton>
-                                                                </ListItem>
-                                                        })}
-                                                        </Scrollbar>
-                                                    
-                                                }
-                                            </List>
-                                            
-                                        </div>
-                                        :
-                                        <Alert sx={{my: 3}} severity="info">
-                                            Seleccione un usuario para ver sus membresías.
-                                        </Alert>  
-                                    }
-
-                                </Grid>       
-                                
-                            
-                                <Divider orientation="vertical" flexItem />                                    
-                                    <Grid item xs={12} md={6}>                                    
+                            <Grid container justifyContent="space-between" columnSpacing={1}>                                     
+                                <Grid item xs={6} md={6}>                                    
                                         <Box sx={{ pb: 3 }}>
                                             <Typography variant="h5" align="center" sx={{mb: 3, mt: 2, fontWeight: "bold"}}>
                                                 Contenido
@@ -461,7 +411,36 @@ export default function MesssageApp() {
                                             >
                                                 Enviar
                                             </LoadingButton>
-                                    </Grid>                                
+                                    </Grid>                             
+                                <Divider orientation="vertical" flexItem />                                    
+                                <Grid item xs={5} md={5}>
+                                    <Box sx={{ pb: 1 }}>
+                                        <Typography variant="h5" align="center" sx={{mb: 3, mt: 2, fontWeight: "bold"}}>
+                                            Imagen (opcional)
+                                        </Typography>
+                                    </Box>
+                                        <FormControl fullWidth sx={{ m:1 }}>
+                                            <InputLabel htmlFor="outlined-adornment-amount">url imagen</InputLabel>
+                                            <OutlinedInput
+                                                id="outlined-adornment-url"                                           
+                                                
+                                                /* onChange={(e)=>setTitulo(e.target.value)}
+                                                value={titulo} */
+                                                
+                                            />
+                                        </FormControl>
+                                    <Box
+                                        component="img"
+                                        sx={{
+                                            height: 300,
+                                            width: 500,
+                                            maxHeight: { xs: 300, md: 167 },
+                                            maxWidth: { xs: 500, md: 250 },
+                                        }}
+                                        alt="Imagen notificación"
+                                        src="http://localhost:4000/assets/svgimg/art-pez.png"
+                                        />
+                                </Grid>                                 
                             </Grid>
                         </CardContent>        
                         
