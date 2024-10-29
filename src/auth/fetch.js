@@ -1,17 +1,26 @@
 import axios from 'axios'
 import history from '../history'
-
 import { API_BASE_URL } from '../configs/AppConfig'
+
+const fs = require('fs');
+const https = require('https');
 
 // import { AUTH_TOKEN } from 'redux/constants/Auth'
 // import { notification } from 'antd';
-
+const httpsAgent = new https.Agent({
+	rejectUnauthorized: false, // (NOTE: this will disable client verification)
+	cert: fs.readFileSync("../certificates/usercert.pem"),
+	key: fs.readFileSync("../certificates/key.pem"),
+	passphrase: "YYY"
+  })
+  
 const service = axios.create({
   baseURL: API_BASE_URL,
   timeout: 60000,
-  httpsAgent: new https.Agent({  
+  httpsAgent
+ /*  httpsAgent: new https.Agent({  
     rejectUnauthorized: false
-  })
+  }) */
 })
 
 // config
