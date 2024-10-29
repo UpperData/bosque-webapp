@@ -47,6 +47,7 @@ service.interceptors.request.use(config => {
 // API respone interceptor
 service.interceptors.response.use( (response) => response.data, (error) => {
 
+	console.log(error)
 	let notificationParam = {
 		message: ''
 	}
