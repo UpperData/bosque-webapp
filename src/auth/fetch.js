@@ -2,7 +2,6 @@ import axios from 'axios'
 import history from '../history'
 import { API_BASE_URL } from '../configs/AppConfig'
 
-const fs = require('fs');
 const https = require('https');
 
 // import { AUTH_TOKEN } from 'redux/constants/Auth'
