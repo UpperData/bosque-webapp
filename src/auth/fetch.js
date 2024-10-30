@@ -2,7 +2,7 @@ import axios from 'axios'
 import history from '../history'
 import { API_BASE_URL } from '../configs/AppConfig'
 
-const https = require('https');
+// const https = require('https');
 
 // import { AUTH_TOKEN } from 'redux/constants/Auth'
 // import { notification } from 'antd';
@@ -13,12 +13,14 @@ const https = require('https');
 	passphrase: "YYY"
   })
    */
+
+  /* const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+  }) */
 const service = axios.create({
   baseURL: API_BASE_URL,
   timeout: 60000,
-   httpsAgent: new https.Agent({  
-    rejectUnauthorized: false
-  }) 
+   // httpsAgent
 })
 
 // config
